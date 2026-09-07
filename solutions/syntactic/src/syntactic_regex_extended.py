@@ -13,7 +13,7 @@ def main():
     absmethodid = jpamb.getmethodid(
         "syntaxer",
         "1.0",
-        "The Rice Theorem Cookers",
+        "Bit Diddlers",
         ["syntactic", "python"],
         for_science=True,
     )
@@ -38,10 +38,8 @@ def main():
 
     log.debug(f"found {res}")
     rest = content[res.end(0) : -1]
-    
-    # Check for assertion errors 
 
-    assert_or_end = re.search(r"assert|>|(^\s*})", rest, re.MULTILINE)
+    assert_or_end = re.search(r"assert|(^\s*})", rest, re.MULTILINE)
 
     if not assert_or_end:
         log.error("Could not end of method or assert")
@@ -57,8 +55,6 @@ def main():
     else:
         log.debug("No assertion")
         print("assertion error;not-found")
-        
-    # Check for divide by zero errors
 
     divide_or_end = re.search(r"/|(^\s*})", rest, re.MULTILINE)
 
@@ -76,70 +72,50 @@ def main():
     else:
         log.debug("No divide")
         print("divide by zero;not-found-div")
-        
-    
-    # find null pointer errors
-    
-    null_or_end = re.search(r"null|(^\s*})", rest, re.MULTILINE)
-    
-    if not null_or_end:
-        log.error("Could not find end of method or null")
-        log.error(rest)
-        sys.exit(1)
 
-    log.debug(f"found null {null_or_end}")
-    null_found = null_or_end.group(0) == "null"
 
-    if null_found:
-        log.debug("Found null")
-        print("null pointer;found-null")
-    else:
-        log.debug("No null")
-        print("null pointer;not-found-null")
-        
-    # loop true check
-    
-    loop_or_end = re.search(r"loop|for|(^\s*})", rest, re.MULTILINE)
-    
-    if not loop_or_end:
-        log.error("Could not find end of method or loop true")
-        log.error(rest)
-        sys.exit(1)
-        
-    log.debug(f"found loop {loop_or_end}")
-    loop_found = loop_or_end.group(0) == "loop true"
-    
-    if loop_found:
-        log.debug("Found loop true")
-        print("*;found-loop")
-    else:
-        log.debug("No loop true")
-        print("*;not-found-loop")
-        
-    # check for out of bounds (essentially check for array)
-    
-    array_or_end = re.search(r"\[|\]|for|(^\s*})", rest, re.MULTILINE)
-    
+    array_or_end = re.search(r"\w+\[.+?\]|(^\s*})", rest, re.MULTILINE)
     if not array_or_end:
         log.error("Could not find end of method or array")
         log.error(rest)
         sys.exit(1)
-    
     log.debug(f"found array {array_or_end}")
-    array_found = array_or_end.group(0) == "[" or array_or_end.group(0) == "]"
-    
+
+    array_found = "[" in array_or_end.group(0)
     if array_found:
-        log.debug("Found array")
-        print("out of bounds;found-array")
+          log.debug("Found array")
+          print("out of bounds;found-array")
     else:
-        log.debug("No array")
-        print("out of bounds;not-found-array")
-        
+          log.debug("No array")
+          print("out of bounds;not-found-array")
+
+    null_or_end = re.search(r"\.|null|(^\s*})",rest,re.MULTILINE)
+    if not null_or_end:
+        log.error ("Could not find end of method or null")
+        log.error(rest)
+        sys.exit(1)
+    log.debug(f"found possible null {null_or_end}")
+    null_found = "null" in null_or_end.group(0) or "." in null_or_end.group(0)
+    if null_found:
+        log.debug("found null")
+        print("null pointer;found-null")
+    else:
+        log.debug("No null")
+        print("null pointer;not-found-null")
     
-    # MUST BE LAST PIECE OF CODE
+    while_or_end = re.search(r"while|(^\s*})",rest,re.MULTILINE)
+    if not while_or_end:
+        log.error ("Could not find end of method or while")
+        log.error(rest)
+        sys.exit(1)
+    while_found = "while" in while_or_end.group(0)
+    if while_found:
+        log.debug ("found while")
+        print("*;found-while")
+    else:
+        log.debug("No while")
+        print("*;not-found-while")
     
     for q in jpamb.QUERIES:
-        if q != "assertion error" and q != "divide by zero" and q != "null pointer" and q != "*" and q != "out of bounds":
+        if q not in ["assertion error","divide by zero","out of bounds","null pointer","*"]:
             print(f"{q};skip")
-            
-    
