@@ -119,8 +119,23 @@ def main():
         log.debug("No assertion")
         print("assertion error;not-found")
 
+
+    divide_q = tree_sitter.Query(JAVA_LANGUAGE, """(binary_expression operator: "/") @divide""")
+
+    divide_found = any(
+        capture_name == "divide"
+        for capture_name, _ in tree_sitter.QueryCursor(divide_q).captures(body).items()
+    )
+
+    if divide_found:
+        log.debug("Found division by zero")
+        print("divide by zero;found")
+    else:
+        log.debug("No divide by zero")
+        print("divide by zero;not-found")
+
     for q in jpamb.QUERIES:
-        if q != "assertion error":
+        if q != "assertion error" and q != "divide by zero":
             print(f"{q};skip")
 
     sys.exit(0)
