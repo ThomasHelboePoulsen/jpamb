@@ -18,6 +18,7 @@ dependencies = [
 [project.scripts]
 syntactic-treesitter = "syntactic_treesitter:main"
 syntactic-regex = "syntactic_regex:main"
+syntactic-regex-extended = "syntactic_regex_extended:main"
 syntactic-bytecode = "syntactic_bytecode:main"
 
 [tool.uv.sources]
