@@ -102,7 +102,8 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
             output = "assertion error"
             
         case jvm.Dup():
-            v = frame.stack.peek()
+            v = frame.stack.pop()
+            frame.stack.push(v)
             frame.stack.push(v)
             frame.pc += 1
             
@@ -123,14 +124,60 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                 frame.pc %= target
             else:
                 frame.pc += 1
-        
-        case jvm.Load(type=t, index=i):
-            if t is jvm.Int():
-                frame.stack.push(frame.locals[i])
-                frame.pc += 1
-            else:
-                raise NotImplementedError(f"Don't know how to load {t}")
-        
+
+        case jvm.NewArray(type=jvm.Int(), dim=dim):
+            count =  frame.stack.pop()
+            assert isinstance(count, jvmc.StackInt), f"expected int, but got {count}"
+
+            ref = state.heap.new(jvmc.HeapArray(jvm.Int(), [0] * count.value))
+            frame.stack.push(ref)
+            frame.pc += 1
+
+        case jvm.ArrayStore(type=jvm.Int()):
+            value, index, ref = frame.stack.pop(), frame.stack.pop(), frame.stack.pop()
+            assert isinstance(value, jvmc.StackInt), f"expected int, but got {value}"
+            assert isinstance(index, jvmc.StackInt), f"expected int, but got {index}"
+            assert isinstance(ref, jvmc.StackReference), f"expected reference, but got {ref}"
+            state.heap[ref].values[index.value] = value.value
+            frame.pc += 1
+
+        case jvm.ArrayLength():
+            ref = frame.stack.pop()
+            assert isinstance(ref, jvmc.StackReference), f"expected reference, but got {ref}"
+            length = len(state.heap[ref].values)
+            frame.stack.push(jvmc.StackInt(length))
+            frame.pc += 1
+
+        case jvm.Store(type=jvm.Reference(), index=i):
+            ref = frame.stack.pop()
+            assert isinstance(ref, jvmc.StackReference), f"expected reference, but got {ref}"
+            frame.locals[i] = ref
+            frame.pc += 1
+
+        case jvm.Store(type=jvm.Int(), index=i):
+            val = frame.stack.pop()
+            assert isinstance(val, jvmc.StackInt), f"expected int, but got {val}"
+            frame.locals[i] = val
+            frame.pc += 1
+
+        case jvm.Load(type=jvm.Int(), index=i):
+            frame.stack.push(frame.locals[i])
+            frame.pc += 1
+
+        case jvm.Load(type=jvm.Reference(), index=i):
+            frame.stack.push(frame.locals[i])
+            frame.pc += 1
+
+        case jvm.Incr(index=i, amount=amount):
+            assert isinstance(i, int), f"expected int, but got {i}"
+            assert isinstance(amount, int), f"expected int, but got {amount}"
+            assert isinstance(frame.locals[i], jvmc.StackInt), f"expected int, but got {frame.locals[i]}"
+            frame.locals[i] = jvmc.StackInt(amount + frame.locals[i].value)
+            frame.pc += 1
+
+        case jvm.Goto(target=target):
+            frame.pc %= target
+
         case a:
             raise NotImplementedError(a.help())
 
