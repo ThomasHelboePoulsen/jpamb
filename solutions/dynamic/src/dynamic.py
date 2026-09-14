@@ -13,6 +13,14 @@ def binary(op, v1: int, v2: int) -> int | str:
                 return v1 // v2
             except ZeroDivisionError:
                 return "divide by zero"
+        
+        case jvm.BinaryOpr.Add:
+            return v1 + v2
+        case jvm.BinaryOpr.Sub:
+            return v1 - v2
+        case jvm.BinaryOpr.Mul:
+            return v1 * v2
+        
         case a:
             raise NotImplementedError(f"Unhandled binary {op!r}")
 
@@ -21,6 +29,16 @@ def compare(op, v1: int, v2: int) -> bool:
     match op:
         case jvm.CmpOpr.Eq:
             return v1 == v2
+        case jvm.CmpOpr.Ne:
+            return v1 != v2
+        case jvm.CmpOpr.Gt:
+            return v1 > v2
+        case jvm.CmpOpr.Ge:
+            return v1 >= v2
+        case jvm.CmpOpr.Lt:
+            return v1 < v2
+        case jvm.CmpOpr.Le:
+            return v1 <= v2
         case _:
             raise NotImplementedError(f"Unhandled comparation {op!r}")
 
@@ -53,14 +71,21 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                 frame.stack.push(jvmc.StackInt(value))
                 frame.pc += 1
 
-        case jvm.Return(type=t):
-            if t is not None:
-                raise NotImplementedError("Still to be done")
-
+        case jvm.Return(type=jvm.Int()):
+            v1 = frame.stack.pop()
             state.frames.pop()
-
             if state.frames:
-                raise NotImplementedError("Still to be done")
+                frame = state.frames.peek()
+                frame.stack.push(v1)
+                frame.pc += 1
+            else:
+                output = "ok"
+                
+        case jvm.Return(type=none):
+            state.frames.pop()
+            if state.frames:
+                frame = state.frames.peek()
+                frame.pc += 1
             else:
                 output = "ok"
 
@@ -75,7 +100,37 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
         case jvm.New(classname=jvm.ClassName("java.lang.AssertionError")):
             # Hack -- if we create an assertion error, we probably also throw it.
             output = "assertion error"
+            
+        case jvm.Dup():
+            v = frame.stack.peek()
+            frame.stack.push(v)
+            frame.pc += 1
+            
+        case jvm.Ifz(condition=op, target=target):
+            value = frame.stack.pop()
+            assert isinstance(value, jvmc.StackInt), f"expected int, but got {value}"
 
+            if compare(op, value.value, 0):
+                frame.pc %= target
+            else:
+                frame.pc += 1
+        
+        case jvm.If(condition=op, target=target):
+            v2, v1 = frame.stack.pop(), frame.stack.pop()
+            assert isinstance(v1, jvmc.StackInt), f"expected int, but got {v1}"
+            assert isinstance(v2, jvmc.StackInt), f"expected int, but got {v2}"
+            if compare(op, v1.value, v2.value):
+                frame.pc %= target
+            else:
+                frame.pc += 1
+        
+        case jvm.Load(type=t, index=i):
+            if t is jvm.Int():
+                frame.stack.push(frame.locals[i])
+                frame.pc += 1
+            else:
+                raise NotImplementedError(f"Don't know how to load {t}")
+        
         case a:
             raise NotImplementedError(a.help())
 
