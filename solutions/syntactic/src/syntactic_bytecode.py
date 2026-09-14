@@ -10,7 +10,7 @@ def main():
     methodid = jpamb.getmethodid(
         "bytecoder",
         "1.0",
-        "The Rice Theorem Cookers",
+        "Bit Diddlers",
         ["syntactic", "python"],
         for_science=True,
     )
