@@ -20,6 +20,11 @@ def binary(op, v1: int, v2: int) -> int | str:
             return v1 - v2
         case jvm.BinaryOpr.Mul:
             return v1 * v2
+        case jvm.BinaryOpr.Rem:
+            try:
+                return v1 % v2
+            except ZeroDivisionError:
+                return "divide by zero"
         
         case a:
             raise NotImplementedError(f"Unhandled binary {op!r}")
@@ -52,10 +57,21 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
     print(f"Stepping {pc}:\n > {opr}", file=sys.stderr)
     match opr:
         case jvm.Push(type=t, value=v):
+            
             if t is jvm.Int():
                 frame.stack.push(jvmc.StackInt(v))
             elif t is jvm.Reference():
                 frame.stack.push(jvmc.StackReference(v))
+            elif t is jvm.Boolean():
+                frame.stack.push(jvmc.StackInt(1 if v else 0))
+            elif t is jvm.Char():
+                frame.stack.push(jvmc.StackInt(ord(v)))
+            elif t is jvm.Short():
+                frame.stack.push(jvmc.StackInt(v))
+            elif isinstance(t, jvm.Object) and isinstance(v, str):
+                ref = state.heap.new(jvmc.HeapString(v))
+                frame.stack.push(ref)
+
             else:
                 raise NotImplementedError("Error: " + opr.help())
             frame.pc += 1
@@ -207,6 +223,58 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
         case jvm.Goto(target=target):
             frame.pc %= target
 
+
+        case jvm.Cast(from_=jvm.Int(), to_=jvm.Short()):
+            value = frame.stack.pop()
+            assert isinstance(value, jvmc.StackInt), f"expected int, but got {value}"
+            frame.stack.push(jvmc.StackInt(value.value & 0xFFFF))
+            frame.pc += 1
+        
+        case jvm.InvokeVirtual(method=method):
+            args = []
+            for p in method.extension.params:
+                v = frame.stack.pop()
+                match p:
+                    case jvm.Int():
+                        assert isinstance(v, jvmc.StackInt), f"expected int, but got {v}"
+                        args.append(v.value)
+                    case jvm.Reference() | jvm.Object():
+                        assert isinstance(v, jvmc.StackReference), (
+                            f"expected reference, but got {v}"
+                        )
+                        args.append(v.value)
+                    case a:
+                        raise NotImplementedError(
+                            f"Do not know how to handle parameter of type {a!r}"
+                        )
+            args.reverse()
+            ref = frame.stack.pop()
+            assert isinstance(ref, jvmc.StackReference), f"expected reference, but got {ref}"
+            if ref.value == 0:
+                output = "null pointer"
+            else:
+                if ref.value == 0:
+                    output = "null pointer"
+                elif method.extension.name == "assert":
+                    assert method.extension.params == [jvm.Boolean()]
+                    assert method.extension.return_type is jvm.Void()
+                    frame.pc += 1
+                elif method.extension.name == "equals":
+                    assert len(method.extension.params) == 1
+                    assert isinstance(method.extension.params[0], jvm.Object)
+                    assert isinstance(method.extension.return_type, jvm.Boolean)
+
+                    other = args[0]
+                    left = state.heap[ref]
+                    right = None if other == 0 else state.heap[jvmc.StackReference(other)]
+                    frame.stack.push(jvmc.StackInt(1 if left == right else 0))
+                    frame.pc += 1
+                else:
+                    raise NotImplementedError(
+                        f"Unsupported virtual method: {method.extension.name}"
+                    )
+
+            
         case a:
             raise NotImplementedError(a.help())
 
