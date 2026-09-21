@@ -146,10 +146,14 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
         case jvm.NewArray(type=jvm.Int(), dim=dim):
             count =  frame.stack.pop()
             assert isinstance(count, jvmc.StackInt), f"expected int, but got {count}"
-
+            #try:
             ref = state.heap.new(jvmc.HeapArray(jvm.Int(), [0] * count.value))
+            #print(f"\n[DEBUG] MemoryError avoided! count.value was: {count.value}\n", file=sys.stderr)
             frame.stack.push(ref)
             frame.pc += 1
+            #except:
+            #    print(f"\n[DEBUG] MemoryError triggered! count.value was: {count.value}\n", file=sys.stderr)
+            #    raise 
 
         case jvm.ArrayStore(type=jvm.Int()):
             value, index, ref = frame.stack.pop(), frame.stack.pop(), frame.stack.pop()
@@ -332,13 +336,21 @@ def initial(bc: jpamb.Bytecode, methodid: jvm.AbsMethodID, input: jpamb.Input):
     return state
 
 
+
+def create_method_frame(method_obj, args):
+    new_frame = jvmc.Frame.from_method(method_obj)
+    assert not new_frame is None 
+    for i, arg in enumerate(args):
+        new_frame.locals[i] = arg
+    return new_frame
+
 def interpret():
     """The entry point for the interpreter"""
 
     methodid, input, max_steps = jpamb.getcase(
         "dynamic",
         "1.0",
-        "The Rice Theorem Cookers",
+        "Bit Diddlers",
         ["dynamic", "python"],
         for_science=True,
     )
@@ -365,21 +377,37 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
         match p:
             case jvm.Int():
                 input.append(jpamb.case.Int(rand.randint(-(1 << 31), 1 << 31)))
+                #input.append(jpamb.case.Int(696969))
             case jvm.Boolean():
                 input.append(jpamb.case.Boolean(1 == rand.randint(0, 1)))
+            case jvm.Array(contains=jvm.Int()):
+                rand_upperbound = rand.randint(1, 10000)
+                rand_length = rand.randint(0,rand_upperbound)
+                array = []
+                for i in range(rand_length):
+                    rand_val = rand.randint(-(1 << 31), 1 << 31)
+                    array.append(rand_val)
+                input.append(jpamb.case.Array(jvm.Int(),array))
+            case jvm.Array(contains=jvm.Char()):
+                rand_upperbound = rand.randint(1, 10000)
+                rand_length = rand.randint(0,rand_upperbound)
+                array = []
+                for i in range(rand_length):
+                    random_int = rand.randint(32, 126)
+                    rand_char = chr(random_int)
+                    array.append(rand_char)
+                input.append(jpamb.case.Array(jvm.Char(),array))
+
             case a:
                 raise NotImplementedError(
-                    "Don't know how to create random values for {input}"
+                    f"Don't know how to create random values for {a}"
                 )
 
     return jpamb.case.Input(input)
 
 
-def create_method_frame(method_obj, args):
-    new_frame = jvmc.Frame.from_method(method_obj)
-    for i, arg in enumerate(args):
-        new_frame.locals[i] = arg
-    return new_frame
+
+
     
 
 
@@ -390,7 +418,7 @@ def analyse():
     methodid = jpamb.getmethodid(
         "dynamic",
         "1.0",
-        "The Rice Theorem Cookers",
+        "Bit Diddlers",
         ["dynamic", "python"],
         for_science=True,
     )
