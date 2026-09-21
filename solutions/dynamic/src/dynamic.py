@@ -5,6 +5,8 @@ import jpamb
 import jvm
 import jvm.state as jvmc
 
+#our group has added these imports:
+import string
 
 def binary(op, v1: int, v2: int) -> int | str:
     match op:
@@ -146,14 +148,13 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
         case jvm.NewArray(type=jvm.Int(), dim=dim):
             count =  frame.stack.pop()
             assert isinstance(count, jvmc.StackInt), f"expected int, but got {count}"
-            #try:
-            ref = state.heap.new(jvmc.HeapArray(jvm.Int(), [0] * count.value))
-            #print(f"\n[DEBUG] MemoryError avoided! count.value was: {count.value}\n", file=sys.stderr)
-            frame.stack.push(ref)
-            frame.pc += 1
-            #except:
-            #    print(f"\n[DEBUG] MemoryError triggered! count.value was: {count.value}\n", file=sys.stderr)
-            #    raise 
+            assert count.value>=0, f"expected non negative array size, but got {count} "
+            try:
+                ref = state.heap.new(jvmc.HeapArray(jvm.Int(), [0] * count.value))
+                frame.stack.push(ref)
+                frame.pc += 1
+            except MemoryError:
+                raise Exception("failed to create array, array too large for memory")
 
         case jvm.ArrayStore(type=jvm.Int()):
             value, index, ref = frame.stack.pop(), frame.stack.pop(), frame.stack.pop()
@@ -397,6 +398,10 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
                     rand_char = chr(random_int)
                     array.append(rand_char)
                 input.append(jpamb.case.Array(jvm.Char(),array))
+            case jvm.Object(jvm.ClassName("java.lang.String")):
+                rand_length = rand.randint(0, 10000)
+                random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=rand_length))
+                input.append(jpamb.case.String(random_string))
 
             case a:
                 raise NotImplementedError(
