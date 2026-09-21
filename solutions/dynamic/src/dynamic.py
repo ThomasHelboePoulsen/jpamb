@@ -229,6 +229,25 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
             assert isinstance(value, jvmc.StackInt), f"expected int, but got {value}"
             frame.stack.push(jvmc.StackInt(value.value & 0xFFFF))
             frame.pc += 1
+        case jvm.InvokeStatic(
+            method=jvm.AbsMethodID(
+                classname=jvm.ClassName(cls_name), 
+                extension=jvm.MethodID(
+                    name=method_name, 
+                    params=method_params, 
+                    return_type=ret_type
+                )
+            ) as method_id
+            ):
+            parameter_count = len(method_params)
+            args = []
+            for i in range(parameter_count):
+                args.append(frame.stack.pop())
+            args.reverse() 
+
+            method_obj = bc.getmethod(method_id)
+            new_frame =create_method_frame(method_obj,args)
+            state.frames.push(new_frame)
         
         case jvm.InvokeVirtual(method=method):
             args = []
@@ -354,6 +373,15 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
                 )
 
     return jpamb.case.Input(input)
+
+
+def create_method_frame(method_obj, args):
+    new_frame = jvmc.Frame.from_method(method_obj)
+    for i, arg in enumerate(args):
+        new_frame.locals[i] = arg
+    return new_frame
+    
+
 
 
 def analyse():
