@@ -10,12 +10,15 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
   "jpamb",
+  "tree-sitter>=0.26.0",
+  "tree-sitter-java>=0.23.5",
 ]
 
 
 [project.scripts]
 dynamic-interpreter = "dynamic:interpret"
 dynamic-analysis = "dynamic:analyse"
+dynamic-dict-analysis = "dynamic_dict:analyse"
 
 [tool.uv.sources]
 jpamb = { path = "../../", editable = true }
@@ -24,4 +27,3 @@ jpamb = { path = "../../", editable = true }
 dev = [
     "pytest>=9.1.1",
 ]
-
