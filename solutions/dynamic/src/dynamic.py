@@ -7,6 +7,9 @@ import jvm.state as jvmc
 
 #our group has added these imports:
 import string
+from java_literals import convert_literals, get_literals_in_method
+import itertools
+
 
 def binary(op, v1: int, v2: int) -> int | str:
     match op:
@@ -410,6 +413,48 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
 
     return jpamb.case.Input(input)
 
+def generate_inputs_from_dict(methodid, suite,max_combinations =2000):
+    #returns list of lists
+    raw_literals = get_literals_in_method(methodid, suite)
+    literals = convert_literals(raw_literals)
+    pools = [] # [all values for param1, all values for param2, ...]
+    for p in methodid.extension.params:
+        match p:
+            case jvm.Int():
+                int_set = {0, 1, -1, -(1 << 31), (1 << 31) - 1}
+                for v in literals.get(int, []):
+                    int_set.update([v - 1, v, v + 1]) 
+                valid_ints = [
+                    jpamb.case.Int(v) for v in int_set 
+                    if -(1 << 31) <= v <= (1 << 31) - 1
+                ]
+                pools.append(valid_ints)
+                
+            case jvm.Boolean():
+                pools.append([jpamb.case.Boolean(True), jpamb.case.Boolean(False)])
+                
+            case jvm.Object(jvm.ClassName("java.lang.String")):
+                str_set = {"", "a"} # length 0, length 1
+                str_set.update(literals.get(str, []))
+                pools.append([jpamb.case.String(v) for v in str_set])
+                
+            case jvm.Array(contains=jvm.Int()):
+
+                arr_pool = [jpamb.case.Array(jvm.Int(), []), jpamb.case.Array(jvm.Int(), [0])] 
+                for v in literals.get(int, []):
+                    arr_pool.append(jpamb.case.Array(jvm.Int(), [v]))
+                pools.append(arr_pool)
+                
+            case a:
+                raise NotImplementedError( f"Don't know how to look up dict values for {a}")
+    #output input combinations
+    for count, combination in enumerate(itertools.product(*pools)):
+        if count >= max_combinations:
+            break        
+        yield jpamb.case.Input(list(combination))
+
+
+
 
 
 
@@ -449,7 +494,16 @@ def analyse():
             if isinstance(state, str):
                 behaviors.add(state)
                 break
+    #use dict combinations
+    for input in generate_inputs_from_dict(methodid, suite):
+        state = initial(bc, methodid, input)
 
+        for x in range(MAX_STEPS):
+            _, state = step(bc, state)
+            if isinstance(state, str):
+                behaviors.add(state)
+                break
+        
     for query in jpamb.QUERIES:
         if query in behaviors:
             if query == "*":
