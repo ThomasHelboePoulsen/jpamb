@@ -59,7 +59,7 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
     pc = frame.pc
     opr = bc[pc]
     output = state
-    #print(f"Stepping {pc}:\n > {opr}", file=sys.stderr)
+    print(f"Stepping {pc}:\n > {opr}", file=sys.stderr)
     match opr:
         case jvm.Push(type=t, value=v):
             
