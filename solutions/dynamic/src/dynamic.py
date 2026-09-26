@@ -59,7 +59,7 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
     pc = frame.pc
     opr = bc[pc]
     output = state
-    print(f"Stepping {pc}:\n > {opr}", file=sys.stderr)
+    #print(f"Stepping {pc}:\n > {opr}", file=sys.stderr)
     match opr:
         case jvm.Push(type=t, value=v):
             
@@ -94,7 +94,14 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                 frame.stack.push(jvmc.StackInt(value))
                 frame.pc += 1
 
-        case jvm.Return(type=jvm.Int()):
+        case jvm.Return(type=None):
+                    state.frames.pop()
+                    if state.frames:
+                        frame = state.frames.peek()
+                        frame.pc += 1
+                    else:
+                        output = "ok"
+        case jvm.Return(type=return_type):
             v1 = frame.stack.pop()
             state.frames.pop()
             if state.frames:
@@ -104,13 +111,7 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
             else:
                 output = "ok"
                 
-        case jvm.Return(type=none):
-            state.frames.pop()
-            if state.frames:
-                frame = state.frames.peek()
-                frame.pc += 1
-            else:
-                output = "ok"
+        
 
         case jvm.Get(static=True, field=field):
             # Hack - Only handle the assertion case
@@ -152,12 +153,16 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
             count =  frame.stack.pop()
             assert isinstance(count, jvmc.StackInt), f"expected int, but got {count}"
             assert count.value>=0, f"expected non negative array size, but got {count} "
-            try:
-                ref = state.heap.new(jvmc.HeapArray(jvm.Int(), [0] * count.value))
-                frame.stack.push(ref)
-                frame.pc += 1
-            except MemoryError:
-                raise Exception("failed to create array, array too large for memory")
+
+            if count.value >= 10_000_000:
+                output = "out of memory"
+            else:  
+                try:
+                    ref = state.heap.new(jvmc.HeapArray(jvm.Int(), [0] * count.value))
+                    frame.stack.push(ref)
+                    frame.pc += 1
+                except MemoryError:
+                    output =  "out of memory"
 
         case jvm.ArrayStore(type=jvm.Int()):
             value, index, ref = frame.stack.pop(), frame.stack.pop(), frame.stack.pop()
@@ -301,6 +306,13 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                         f"Unsupported virtual method: {method.extension.name}"
                     )
 
+        case jvm.Negate(type = jvm.Int()):
+            v = frame.stack.pop()
+            assert isinstance(v,jvmc.StackInt)
+            negv =  binary(jvm.BinaryOpr.Sub,0,v.value)
+            frame.stack.push(jvmc.StackInt(negv))
+            frame.pc+=1
+
             
         case a:
             raise NotImplementedError(a.help())
@@ -421,9 +433,11 @@ def generate_inputs_from_dict(methodid, suite,max_combinations =2000):
     for p in methodid.extension.params:
         match p:
             case jvm.Int():
-                int_set = {0, 1, -1, -(1 << 31), (1 << 31) - 1}
+                int_set = {0, 1, -1, -(1 << 31), (1 << 31) - 1,8}
+                int_set.update(range(-2, 11)) # add small integers (1-10)
                 for v in literals.get(int, []):
                     int_set.update([v - 1, v, v + 1]) 
+
                 valid_ints = [
                     jpamb.case.Int(v) for v in int_set 
                     if -(1 << 31) <= v <= (1 << 31) - 1
@@ -439,12 +453,66 @@ def generate_inputs_from_dict(methodid, suite,max_combinations =2000):
                 pools.append([jpamb.case.String(v) for v in str_set])
                 
             case jvm.Array(contains=jvm.Int()):
-
-                arr_pool = [jpamb.case.Array(jvm.Int(), []), jpamb.case.Array(jvm.Int(), [0])] 
+                arr_pool = []
+                base_ints = {0, 1, -1, -(1 << 31), (1 << 31) - 1}
                 for v in literals.get(int, []):
-                    arr_pool.append(jpamb.case.Array(jvm.Int(), [v]))
-                pools.append(arr_pool)
+                    base_ints.update([v - 1, v, v + 1])
                 
+                base_ints.update(random.randint(-(1 << 31), (1 << 31) - 1) for _ in range(3))
+                smart_array_ints = [v for v in base_ints if -(1 << 31) <= v <= (1 << 31) - 1]
+
+                
+                arr_pool.append(jpamb.case.Array(jvm.Int(), []))
+                
+                # for each int in dictionary, genarate array only containing those values
+                for v in smart_array_ints:
+                    arr_pool.append(jpamb.case.Array(jvm.Int(), [v]))
+                    arr_pool.append(jpamb.case.Array(jvm.Int(), [v, v, v])) # size 3 is just arbitrarily chosen
+                    
+                # randomly combine values from dict
+                for _ in range(5):
+                    length = random.randint(2, 10)
+                    mixed_values = random.choices(smart_array_ints, k=length)
+                    arr_pool.append(jpamb.case.Array(jvm.Int(), mixed_values))
+                    
+                pools.append(arr_pool)
+            case jvm.Array(contains=jvm.Object(jvm.ClassName("java.lang.String"))):
+                arr_pool = []
+                base_strings = {"", "a"}
+                base_strings.update(literals.get(str, []))
+                smart_strs = list(base_strings)
+                arr_pool.append(jpamb.case.Array(jvm.Object(jvm.ClassName("java.lang.String")), []))
+            
+                for s in smart_strs:
+                    arr_pool.append(jpamb.case.Array(jvm.Object(jvm.ClassName("java.lang.String")), [s]))
+                    arr_pool.append(jpamb.case.Array(jvm.Object(jvm.ClassName("java.lang.String")), [s, s, s]))
+                for _ in range(5):
+                    length = random.randint(2, 10)
+                    mixed_values = random.choices(smart_strs, k=length)
+                    arr_pool.append(jpamb.case.Array(jvm.Object(jvm.ClassName("java.lang.String")), mixed_values))
+                    
+                pools.append(arr_pool)
+            case jvm.Array(contains=jvm.Char()):
+                arr_pool = []
+                
+                base_chars = {'\x00', 'a', '\uffff'} 
+                for s in literals.get(str, []):
+                    if len(s) == 1:
+                        base_chars.add(s)
+                base_chars.update(chr(random.randint(32, 126)) for _ in range(3))
+                smart_chars = list(base_chars)
+                arr_pool.append(jpamb.case.Array(jvm.Char(), []))
+                for c in smart_chars:
+                    arr_pool.append(jpamb.case.Array(jvm.Char(), [c]))
+                    arr_pool.append(jpamb.case.Array(jvm.Char(), [c, c, c]))
+                    
+               
+                for _ in range(5):
+                    length = random.randint(2, 10)
+                    mixed_values = random.choices(smart_chars, k=length)
+                    arr_pool.append(jpamb.case.Array(jvm.Char(), mixed_values))
+                    
+                pools.append(arr_pool)
             case a:
                 raise NotImplementedError( f"Don't know how to look up dict values for {a}")
     #output input combinations
@@ -463,7 +531,7 @@ def generate_inputs_from_dict(methodid, suite,max_combinations =2000):
 
 
 def analyse():
-    """The dynamic analysis, e.g. in this case a (dumb) fuzzer."""
+    """The dynamic analysis, dumb fuzzer + dictionary."""
 
     methodid = jpamb.getmethodid(
         "dynamic",
@@ -476,7 +544,7 @@ def analyse():
     suite, eff = jpamb.setup()
     bc = jpamb.Bytecode(suite, eff, {})
 
-    MAX_STEPS = 200
+    MAX_STEPS = 2000
 
     import random
 
@@ -485,24 +553,58 @@ def analyse():
 
     behaviors = set()
     # Try 10 random inputs
-    for i in range(10):
+    random_repeats = 10
+    
+    for i in range(random_repeats):
         input = fuzz_input(rand, methodid)
         state = initial(bc, methodid, input)
-
+        seen_states = set()
         for x in range(MAX_STEPS):
-            _, state = step(bc, state)
+            pc, state = step(bc, state)
             if isinstance(state, str):
                 behaviors.add(state)
                 break
+            frame = state.frames.peek() 
+            snapshot = (
+                tuple(f.pc.offset for f in state.frames.frames), #have we seen exactly identical program counters for all frames?         
+                frame.pc.method,                
+                frame.pc.offset,                
+                tuple(frame.stack.operands),    
+                tuple(frame.locals.locals)      
+            )
+            if snapshot in seen_states:
+                behaviors.add("*")
+                break
+                
+            seen_states.add(snapshot)
+        
+
     #use dict combinations
+    
     for input in generate_inputs_from_dict(methodid, suite):
         state = initial(bc, methodid, input)
-
+        seen_states = set()
         for x in range(MAX_STEPS):
-            _, state = step(bc, state)
+            pc, state = step(bc, state)
             if isinstance(state, str):
                 behaviors.add(state)
                 break
+            #check if memory has already been seen
+            frame = state.frames.peek() 
+            snapshot = (
+                tuple(f.pc.offset for f in state.frames.frames),            
+                frame.pc.method,                
+                frame.pc.offset,                
+                tuple(frame.stack.operands),    
+                tuple(frame.locals.locals)      
+            )
+            if snapshot in seen_states:
+                behaviors.add("*")
+                break
+                
+            seen_states.add(snapshot)
+   
+
         
     for query in jpamb.QUERIES:
         if query in behaviors:
