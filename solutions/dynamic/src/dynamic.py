@@ -424,6 +424,17 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
 
     return jpamb.case.Input(input)
 
+def analysis_inputs(methodid, suite):
+    if not methodid.extension.params:
+        yield jpamb.case.Input([])
+        return
+
+    rand = random.Random(0)
+    for _ in range(10):
+        yield fuzz_input(rand, methodid)
+    yield from generate_inputs_from_dict(methodid, suite)
+
+
 def analyse():
     """The dynamic analysis, dumb fuzzer + dictionary."""
 
@@ -440,35 +451,8 @@ def analyse():
 
     MAX_STEPS = 2000
 
-    import random
-
-    # Make the randomness deterministic
-    rand = random.Random(0)
-
     behaviors = set()
-    # Try 10 random inputs
-    random_repeats = 10
-    
-    for i in range(random_repeats):
-        input = fuzz_input(rand, methodid)
-        state = initial(bc, methodid, input)
-        seen_states = set()
-        for x in range(MAX_STEPS):
-            pc, state = step(bc, state)
-            if isinstance(state, str):
-                behaviors.add(state)
-                break
-            snapshot = state_snapshot(state)
-            if snapshot in seen_states:
-                behaviors.add("*")
-                break
-                
-            seen_states.add(snapshot)
-        
-
-    #use dict combinations
-    
-    for input in generate_inputs_from_dict(methodid, suite):
+    for input in analysis_inputs(methodid, suite):
         state = initial(bc, methodid, input)
         seen_states = set()
         for x in range(MAX_STEPS):
