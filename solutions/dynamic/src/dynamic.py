@@ -7,6 +7,7 @@ import jvm
 import jvm.state as jvmc
 
 from java_literals import generate_inputs_from_dict
+from state_snapshot import state_snapshot
 
 
 def binary(op, v1: int, v2: int) -> int | str:
@@ -57,7 +58,7 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
     pc = frame.pc
     opr = bc[pc]
     output = state
-    print(f"Stepping {pc}:\n > {opr}", file=sys.stderr)
+    #print(f"Stepping {pc}:\n > {opr}", file=sys.stderr)
     match opr:
         case jvm.Push(type=t, value=v):
             
@@ -457,14 +458,7 @@ def analyse():
             if isinstance(state, str):
                 behaviors.add(state)
                 break
-            frame = state.frames.peek() 
-            snapshot = (
-                tuple(f.pc.offset for f in state.frames.frames), #have we seen exactly identical program counters for all frames?         
-                frame.pc.method,                
-                frame.pc.offset,                
-                tuple(frame.stack.operands),    
-                tuple(frame.locals.locals)      
-            )
+            snapshot = state_snapshot(state)
             if snapshot in seen_states:
                 behaviors.add("*")
                 break
@@ -482,15 +476,7 @@ def analyse():
             if isinstance(state, str):
                 behaviors.add(state)
                 break
-            #check if memory has already been seen
-            frame = state.frames.peek() 
-            snapshot = (
-                tuple(f.pc.offset for f in state.frames.frames),            
-                frame.pc.method,                
-                frame.pc.offset,                
-                tuple(frame.stack.operands),    
-                tuple(frame.locals.locals)      
-            )
+            snapshot = state_snapshot(state)
             if snapshot in seen_states:
                 behaviors.add("*")
                 break
