@@ -1,7 +1,9 @@
 """Find Java method literals and convert them into Python value pools."""
 
 from collections import defaultdict
+import itertools
 from pathlib import Path
+import random
 
 import tree_sitter
 import tree_sitter_java
@@ -10,6 +12,117 @@ import jpamb
 import jvm
 
 JAVA_LANGUAGE = tree_sitter.Language(tree_sitter_java.language())
+
+INT_MIN = -(1 << 31)
+INT_MAX = (1 << 31) - 1
+
+
+def integer_candidates(literals, *, for_array=False):
+    if for_array:
+        values = {0, 1, -1, -(1 << 31), (1 << 31) - 1}
+    else:
+        values = {0, 1, -1, -(1 << 31), (1 << 31) - 1, 8}
+        values.update(range(-2, 11))
+    for value in literals.get(int, []):
+        values.update([value - 1, value, value + 1])
+    if for_array:
+        values.update(random.randint(INT_MIN, INT_MAX) for _ in range(3))
+    return [value for value in values if INT_MIN <= value <= INT_MAX]
+
+
+def string_candidates(literals):
+    values = {"", "a"}
+    values.update(literals.get(str, []))
+    return list(values)
+
+
+def character_candidates(literals):
+    characters = {'\x00', 'a', '\uffff'}
+    for text in literals.get(str, []):
+        if len(text) == 1:
+            characters.add(text)
+    for _ in range(3):
+        characters.add(chr(random.randint(32, 126)))
+    return list(characters)
+
+
+def repeated_arrays(element_type, values):
+    arrays = []
+    for value in values:
+        arrays.append(jpamb.case.Array(element_type, [value]))
+        arrays.append(jpamb.case.Array(element_type, [value, value, value]))
+    return arrays
+
+
+def random_arrays(element_type, values):
+    arrays = []
+    for _ in range(5):
+        length = random.randint(2, 10)
+        contents = random.choices(values, k=length)
+        arrays.append(jpamb.case.Array(element_type, contents))
+    return arrays
+
+
+def literal_character_arrays(raw_literals):
+    arrays = []
+    raw_characters = raw_literals.get("character_literal", [])
+    converted = convert_literals({"character_literal": raw_characters})
+    characters = converted.get(str, [])
+    if characters:
+        arrays.append(jpamb.case.Array(jvm.Char(), characters))
+        arrays.append(jpamb.case.Array(jvm.Char(), list(reversed(characters))))
+
+    raw_strings = raw_literals.get("string_literal", [])
+    converted = convert_literals({"string_literal": raw_strings})
+    for text in converted.get(str, []):
+        arrays.append(jpamb.case.Array(jvm.Char(), list(text)))
+    return arrays
+
+
+def array_candidates(element_type, literals, raw_literals):
+    match element_type:
+        case jvm.Int():
+            values = integer_candidates(literals, for_array=True)
+        case jvm.Char():
+            values = character_candidates(literals)
+        case jvm.Object(jvm.ClassName("java.lang.String")):
+            values = string_candidates(literals)
+        case _:
+            raise NotImplementedError(f"No array candidates for {element_type}")
+
+    arrays = [jpamb.case.Array(element_type, [])]
+    if element_type == jvm.Char():
+        arrays.extend(literal_character_arrays(raw_literals))
+    arrays.extend(repeated_arrays(element_type, values))
+    arrays.extend(random_arrays(element_type, values))
+    return arrays
+
+
+def parameter_candidates(parameter_type, literals, raw_literals):
+    match parameter_type:
+        case jvm.Int():
+            return [jpamb.case.Int(value) for value in integer_candidates(literals)]
+        case jvm.Boolean():
+            return [jpamb.case.Boolean(True), jpamb.case.Boolean(False)]
+        case jvm.Object(jvm.ClassName("java.lang.String")):
+            return [jpamb.case.String(value) for value in string_candidates(literals)]
+        case jvm.Array(contains=element_type):
+            return array_candidates(element_type, literals, raw_literals)
+        case _:
+            raise NotImplementedError(f"No input candidates for {parameter_type}")
+
+
+def generate_inputs_from_dict(methodid, suite, max_combinations=2000):
+    raw_literals = get_literals_in_method(methodid, suite)
+    literals = convert_literals(raw_literals)
+    pools = []
+    for parameter_type in methodid.extension.params:
+        pools.append(parameter_candidates(parameter_type, literals, raw_literals))
+
+    for count, combination in enumerate(itertools.product(*pools)):
+        if count >= max_combinations:
+            break
+        yield jpamb.case.Input(list(combination))
 
 
 def convert_literals(raw_literals: dict[str, list[bytes]]) -> dict[type, list]:

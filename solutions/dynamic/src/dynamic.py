@@ -1,14 +1,12 @@
 import random
 import sys
+import string
 
 import jpamb
 import jvm
 import jvm.state as jvmc
 
-#our group has added these imports:
-import string
-from java_literals import convert_literals, get_literals_in_method
-import itertools
+from java_literals import generate_inputs_from_dict
 
 
 def binary(op, v1: int, v2: int) -> int | str:
@@ -424,111 +422,6 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
                 )
 
     return jpamb.case.Input(input)
-
-def generate_inputs_from_dict(methodid, suite,max_combinations =2000):
-    #returns list of lists
-    raw_literals = get_literals_in_method(methodid, suite)
-    literals = convert_literals(raw_literals)
-    pools = [] # [all values for param1, all values for param2, ...]
-    for p in methodid.extension.params:
-        match p:
-            case jvm.Int():
-                int_set = {0, 1, -1, -(1 << 31), (1 << 31) - 1,8}
-                int_set.update(range(-2, 11)) # add small integers (1-10)
-                for v in literals.get(int, []):
-                    int_set.update([v - 1, v, v + 1]) 
-
-                valid_ints = [
-                    jpamb.case.Int(v) for v in int_set 
-                    if -(1 << 31) <= v <= (1 << 31) - 1
-                ]
-                pools.append(valid_ints)
-                
-            case jvm.Boolean():
-                pools.append([jpamb.case.Boolean(True), jpamb.case.Boolean(False)])
-                
-            case jvm.Object(jvm.ClassName("java.lang.String")):
-                str_set = {"", "a"} # length 0, length 1
-                str_set.update(literals.get(str, []))
-                pools.append([jpamb.case.String(v) for v in str_set])
-                
-            case jvm.Array(contains=jvm.Int()):
-                arr_pool = []
-                base_ints = {0, 1, -1, -(1 << 31), (1 << 31) - 1}
-                for v in literals.get(int, []):
-                    base_ints.update([v - 1, v, v + 1])
-                
-                base_ints.update(random.randint(-(1 << 31), (1 << 31) - 1) for _ in range(3))
-                smart_array_ints = [v for v in base_ints if -(1 << 31) <= v <= (1 << 31) - 1]
-
-                
-                arr_pool.append(jpamb.case.Array(jvm.Int(), []))
-                
-                # for each int in dictionary, genarate array only containing those values
-                for v in smart_array_ints:
-                    arr_pool.append(jpamb.case.Array(jvm.Int(), [v]))
-                    arr_pool.append(jpamb.case.Array(jvm.Int(), [v, v, v])) # size 3 is just arbitrarily chosen
-                    
-                # randomly combine values from dict
-                for _ in range(5):
-                    length = random.randint(2, 10)
-                    mixed_values = random.choices(smart_array_ints, k=length)
-                    arr_pool.append(jpamb.case.Array(jvm.Int(), mixed_values))
-                    
-                pools.append(arr_pool)
-            case jvm.Array(contains=jvm.Object(jvm.ClassName("java.lang.String"))):
-                arr_pool = []
-                base_strings = {"", "a"}
-                base_strings.update(literals.get(str, []))
-                smart_strs = list(base_strings)
-                arr_pool.append(jpamb.case.Array(jvm.Object(jvm.ClassName("java.lang.String")), []))
-            
-                for s in smart_strs:
-                    arr_pool.append(jpamb.case.Array(jvm.Object(jvm.ClassName("java.lang.String")), [s]))
-                    arr_pool.append(jpamb.case.Array(jvm.Object(jvm.ClassName("java.lang.String")), [s, s, s]))
-                for _ in range(5):
-                    length = random.randint(2, 10)
-                    mixed_values = random.choices(smart_strs, k=length)
-                    arr_pool.append(jpamb.case.Array(jvm.Object(jvm.ClassName("java.lang.String")), mixed_values))
-                    
-                pools.append(arr_pool)
-            case jvm.Array(contains=jvm.Char()):
-                arr_pool = []
-                
-                base_chars = {'\x00', 'a', '\uffff'} 
-                for s in literals.get(str, []):
-                    if len(s) == 1:
-                        base_chars.add(s)
-                base_chars.update(chr(random.randint(32, 126)) for _ in range(3))
-                smart_chars = list(base_chars)
-                arr_pool.append(jpamb.case.Array(jvm.Char(), []))
-                for c in smart_chars:
-                    arr_pool.append(jpamb.case.Array(jvm.Char(), [c]))
-                    arr_pool.append(jpamb.case.Array(jvm.Char(), [c, c, c]))
-                    
-               
-                for _ in range(5):
-                    length = random.randint(2, 10)
-                    mixed_values = random.choices(smart_chars, k=length)
-                    arr_pool.append(jpamb.case.Array(jvm.Char(), mixed_values))
-                    
-                pools.append(arr_pool)
-            case a:
-                raise NotImplementedError( f"Don't know how to look up dict values for {a}")
-    #output input combinations
-    for count, combination in enumerate(itertools.product(*pools)):
-        if count >= max_combinations:
-            break        
-        yield jpamb.case.Input(list(combination))
-
-
-
-
-
-
-    
-
-
 
 def analyse():
     """The dynamic analysis, dumb fuzzer + dictionary."""
