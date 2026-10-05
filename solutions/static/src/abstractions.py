@@ -231,15 +231,58 @@ class SignSet(Abstraction, Lattice):
                         output.add(-1)
                     if 1 in other.signs:
                         output.add(-1)
+                return (SignSet(output), set())
             case jvm.BinaryOpr.Div:
+                output = set()
+                errors = set()
+                if 1 in self.signs:
+                    if 1 in other.signs:
+                        output.add(1)
+                    if -1 in other.signs:
+                        output.add(-1)
+                if -1 in self.signs:
+                    if 1 in other.signs:
+                        output.add(-1)
+                    if -1 in other.signs:
+                        output.add(1)
+                if 0 in self.signs:
+                    output.add(0)
+                if 0 in other.signs:
+                    errors.add("divide by zero")
+                return (SignSet(output), errors)
+            case jvm.BinaryOpr.Mul:
                 output = set()
                 if 1 in self.signs:
                     if 1 in other.signs:
                         output.add(1)
                     if -1 in other.signs:
                         output.add(-1)
-                        
-                        
+                if -1 in self.signs:
+                    if 1 in other.signs:
+                        output.add(-1)
+                    if -1 in other.signs:
+                        output.add(1)
+                if 0 in self.signs:
+                    output.add(0)
+                if 0 in other.signs:
+                    output.add(0)
+                return (SignSet(output), set())
+            case jvm.BinaryOpr.Rem:
+                output = set()
+                errors = set()
+                has_non_zero_divisor = (1 in other.signs) or (-1 in other.signs)
+                if has_non_zero_divisor:
+                    if 1 in self.signs:
+                        output.update([0, 1])
+                    if -1 in self.signs:
+                        output.update([0, -1])
+                    if 0 in self.signs:
+                        output.add(0)
+
+                if 0 in other.signs:
+                    errors.add("divide by zero")
+
+                return (SignSet(frozenset(output)), errors)
             
 
             case _:

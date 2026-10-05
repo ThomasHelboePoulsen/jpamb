@@ -87,14 +87,25 @@ def manystep(
 
         case jvm.Goto(target=t):
             yield (pc % t, state)
+        case jvm.If(condition=op,target=target):
+            [val1,val2],after = state.pop(2)
+            for res in SignSet.compare(val1,val2,op):
+                match res:
+                    case True:
+                        yield (pc % target, after)
+                    case False:
+                        yield (pc + 1, after)
+                    case err:
+                        yield err
+
 
         case jvm.Binary(operant=op):
             [v1, v2], after = state.pop(2)
-            for res in SignSet.arithmetic(v1, v2, op):
-                if isinstance(res, str):
-                    yield res
-                else:
-                    yield (pc + 1, after.push(res))
+            res, errors = SignSet.arithmetic(v1, v2, op)
+            for err in errors:
+                yield err
+            if res.signs:
+                yield (pc + 1, after.push(res))
 
         case jvm.Return(type=None):
             yield "ok"
