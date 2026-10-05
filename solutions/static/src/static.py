@@ -81,6 +81,9 @@ def manystep(
         case jvm.Load(index=i):
             va = state.load(i)
             yield (pc + 1, state.push(va))
+        case jvm.Push(type=t,value=i):
+            assert isinstance(t,jvm.StackType)
+            yield (pc+1,state.push(SignSet.abstract([StackInt(i)])))
 
         case jvm.Goto(target=t):
             yield (pc % t, state)
@@ -103,6 +106,9 @@ def manystep(
         case jvm.New(classname=jvm.ClassName("java.lang.AssertionError")):
             # Hack -- if we create an assertion error, we probably also throw it.
             yield "assertion error"
+        # this case was added by us for debuggning purposes
+        case _:
+            raise NotImplementedError(f"Unimplemented opcode at {pc}: {opr} ({opr!r})")
 
 
 def initialstate(
@@ -175,7 +181,7 @@ def interpret():
     methodid, input, steps = jpamb.getcase(
         "static",
         "1.0",
-        "The Rice Theorem Cookers",
+        "Bit Diddlers",
         ["static", "python"],
         for_science=True,
     )
@@ -202,7 +208,7 @@ def analyse():
     methodid = jpamb.getmethodid(
         "static",
         "1.0",
-        "The Rice Theorem Cookers",
+        "Bit Diddlers",
         ["static", "python"],
         for_science=True,
     )
