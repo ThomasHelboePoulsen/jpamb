@@ -128,31 +128,31 @@ def manystep(
             actual_value = popped_value[0]
             new_state = popped_state.store(index, actual_value)
             yield (pc+1,new_state)
-        #case jvm.IAStore():
-        #    popped, new_state = state.pop(3)
-    #
-        #    arrayref_signs = popped[0]
-        #    index_signs = popped[1]     
-        #    value_signs = popped[2]  
-        #    updated_array_signs = arrayref_signs | value_signs # union of sign sets
-        #    
-        #    # since no heap we dont push
-        #    yield (pc + 1, new_state)
-        #case jvm.IALoad():
-        #    popped, popped_state = state.pop(2)
-        #    arrayref_signs = popped[0]
-        #    index_signs = popped[1] # Ignored
-        #    # We push the array's signs back onto the stack as the "loaded value"
-        #    new_state = popped_state.push(arrayref_signs)
-        #    
-        #    yield (pc + 1, new_state) 
+        case jvm.InvokeStatic(method=method_id):
+            num_args = len(method_id.extension.params)
+            args, after = state.pop(num_args) if num_args else ((), state)  
+            target_method = bc.getmethod(method_id)
+            callee_locals = [SignSet.bot()] * target_method.max_locals
+            for i, arg in enumerate(args):
+                callee_locals[i] = arg  
+            entry_pc = PC(method_id, 0)
+            callee_state = State(tuple(callee_locals), ())  
+            yield (entry_pc, callee_state) # add called method state to states to iterate on
+            ret_type = method_id.extension.return_type
+            match ret_type:
+                case None:
+                    next_state = after
+                case jvm.Array():
+                    next_state = after.push(SignSet.from_sign("+"))
+                case _:
+                    next_state = after.push(SignSet.top())
+            yield (pc + 1, next_state)
         case jvm.Load(index=i):
             va = state.load(i)
             yield (pc + 1, state.push(va))
         case jvm.Push(type=t,value=i):
             assert isinstance(t,jvm.StackType)
             yield (pc+1,state.push(SignSet.abstract([StackInt(i)])))
-
         case jvm.Goto(target=t):
             yield (pc % t, state)
         case jvm.If(condition=op,target=target):
@@ -180,8 +180,17 @@ def manystep(
         case jvm.New(classname=jvm.ClassName("java.lang.AssertionError")):
             # Hack -- if we create an assertion error, we probably also throw it.
             yield "assertion error"
-
-        
+        case jvm.Negate(type = jvm.Int()):
+            (v,),new_state = state.pop(1)
+            zero_set = SignSet.abstract(StackInt(0))
+            negv,errors =  zero_set.arithmetic(v,jvm.BinaryOpr.Sub)
+            for error in errors:
+                yield error
+            yield (pc+1,new_state.push(negv))
+        case jvm.Cast(from_=jvm.Int(), to_=jvm.Short()):
+            (val,), after = state.pop()
+            res = val if val == SignSet.from_sign("0") else SignSet.top()
+            yield (pc + 1, after.push(res))
         # this case was added by us for debuggning purposes
         case _:
             raise NotImplementedError(f"Unimplemented opcode at {pc}: {opr} ({opr!r})")
@@ -251,6 +260,32 @@ class AbstractInterpreter:
 
         return pc, finals
 
+# helper function for invoke static
+def analyze_method(
+    bc: jpamb.Bytecode,
+    method_id: jvm.AbsMethodID,
+    args: tuple[SignSet, ...],
+    max_steps: int = 200,
+) -> set[str]:
+    method = bc.getmethod(method_id)
+    locals_ = [SignSet.bot()] * method.max_locals
+    for i, arg in enumerate(args):
+        locals_[i] = arg
+
+    entry_pc = PC(method_id, 0)
+    ai = AbstractInterpreter(
+        bc,
+        deque([entry_pc]),
+        {entry_pc: State(tuple(locals_), ())},
+    )
+
+    outcomes = set()
+    while ai.worklist and max_steps > 0:
+        _, finals = ai.step()
+        outcomes |= finals
+        max_steps -= 1
+
+    return outcomes
 
 def interpret():
     """The static analysis"""
@@ -267,16 +302,20 @@ def interpret():
     ai = AbstractInterpreter.initial(bc, methodid, input)
 
     x = jpamb.emit_init(ai.states)
-
+    # to watch for infinite loops
+    all_finals = set()
+    last_pc = next(iter(ai.states.keys())) # serves as anchor to ensure pc isnt unbound
     while steps > 0 and ai.worklist:
         pc, final = ai.step()
         for f in final:
             jpamb.emit_step(x, pc, f, depth=1)
+            all_finals.add(f)
             steps -= 1
 
         x = jpamb.emit_step(x, pc, ai.states, depth=1)
         steps -= 1
-
+    if not all_finals: # 
+        jpamb.emit_step(x, last_pc, "*", depth=1)
 
 def analyse():
     """The static analysis"""
