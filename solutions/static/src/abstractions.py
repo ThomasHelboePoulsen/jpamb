@@ -170,6 +170,8 @@ class SignSet(Abstraction, Lattice):
     @classmethod
     def abstract(cls, values: Iterable[jvms.StackValue]) -> Self:
         signs = set()
+        if not isinstance(values, Iterable):
+            values = [values]
         for value in values:
             signs.add(to_sign(value))
         return cls(frozenset(signs))
@@ -235,16 +237,20 @@ class SignSet(Abstraction, Lattice):
             case jvm.BinaryOpr.Div:
                 output = set()
                 errors = set()
-                if 1 in self.signs:
-                    if 1 in other.signs:
-                        output.add(1)
-                    if -1 in other.signs:
-                        output.add(-1)
-                if -1 in self.signs:
-                    if 1 in other.signs:
-                        output.add(-1)
-                    if -1 in other.signs:
-                        output.add(1)
+                has_non_zero_divisor = (1 in other.signs) or (-1 in other.signs)
+                if has_non_zero_divisor:
+                    if 1 in self.signs:
+                        if 1 in other.signs:
+                            output.add(1)
+                        if -1 in other.signs:
+                            output.add(-1)
+                        output.add(0)
+                    if -1 in self.signs:
+                        if 1 in other.signs:
+                            output.add(-1)
+                        if -1 in other.signs:
+                            output.add(1)
+                        output.add(0)
                 if 0 in self.signs:
                     output.add(0)
                 if 0 in other.signs:

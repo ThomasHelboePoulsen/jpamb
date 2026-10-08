@@ -77,7 +77,75 @@ def manystep(
                         yield (pc + 1, after)
                     case err:
                         yield err
+        case jvm.NewArray(type=t, dim=dim):
+            popped_val,popped_state = state.pop() # size of array, ignored
+            abstract_array = SignSet.abstract(StackInt(1))
+            yield (pc+1,popped_state.push(abstract_array)) # currently just pushes to the stack as no heap exists
+        case jvm.ArrayLength():
+            (ref,), popped_state = state.pop(1)
+            if StackInt(0) in ref:
+                yield "null pointer"
+            if (StackInt(1) in ref) or (StackInt(-1) in ref):
+                length = SignSet(frozenset({0,1})) # length thrown away upon creation
+                yield (pc+1, popped_state.push(length))
+        case jvm.ArrayLoad(type=t):
+            (ref, index),popped_state = state.pop(2)
+            
+            if StackInt(0) in ref:
+                yield "null pointer"
+            yield "out of bounds"
+            if (StackInt(1) in ref) or (StackInt(-1) in ref):
+                new_state = popped_state.push(SignSet.top()) # we assume signs could be anything
+                yield (pc + 1, new_state)
+        case jvm.ArrayStore(type=t):
+            (ref, index, value),new_state = state.pop(3)
+            if StackInt(0) in ref:
+                yield "null pointer"
+            yield "out of bounds"
+            if (StackInt(1) in ref) or (StackInt(-1) in ref):
+                yield (pc+1,new_state)
+        case jvm.Incr(index=ind, amount = amo):
+            assert isinstance(amo,int)
+            abst = SignSet.abstract(StackInt(amo))
+            stored_set = state.load(ind)
+            new_val,errors = SignSet.arithmetic(abst,stored_set,jvm.BinaryOpr.Add)
+            for error in errors:
+                yield error
+            
+            new_state  =state.store(ind,new_val)
+            yield (pc+1,new_state)
 
+
+        case jvm.Dup():
+            values,popped_state = state.pop()
+            new_state = popped_state.push(values[0])
+            yield(pc+1,new_state.push(values[0]))
+        case jvm.ArrayStore(type=jvm.Int()):
+            popped, new_state = state.pop(3)
+            yield (pc + 1, new_state)
+        case jvm.Store(type=type,index = index):
+            popped_value, popped_state = state.pop(1)
+            actual_value = popped_value[0]
+            new_state = popped_state.store(index, actual_value)
+            yield (pc+1,new_state)
+        #case jvm.IAStore():
+        #    popped, new_state = state.pop(3)
+    #
+        #    arrayref_signs = popped[0]
+        #    index_signs = popped[1]     
+        #    value_signs = popped[2]  
+        #    updated_array_signs = arrayref_signs | value_signs # union of sign sets
+        #    
+        #    # since no heap we dont push
+        #    yield (pc + 1, new_state)
+        #case jvm.IALoad():
+        #    popped, popped_state = state.pop(2)
+        #    arrayref_signs = popped[0]
+        #    index_signs = popped[1] # Ignored
+        #    # We push the array's signs back onto the stack as the "loaded value"
+        #    new_state = popped_state.push(arrayref_signs)
+        #    
+        #    yield (pc + 1, new_state) 
         case jvm.Load(index=i):
             va = state.load(i)
             yield (pc + 1, state.push(va))
@@ -97,8 +165,6 @@ def manystep(
                         yield (pc + 1, after)
                     case err:
                         yield err
-
-
         case jvm.Binary(operant=op):
             [v1, v2], after = state.pop(2)
             res, errors = SignSet.arithmetic(v1, v2, op)
@@ -106,17 +172,16 @@ def manystep(
                 yield err
             if res.signs:
                 yield (pc + 1, after.push(res))
-
         case jvm.Return(type=None):
             yield "ok"
-
         case jvm.Return(type=t):
             # Hack -- we assume that we always return.
             yield "ok"
-
         case jvm.New(classname=jvm.ClassName("java.lang.AssertionError")):
             # Hack -- if we create an assertion error, we probably also throw it.
             yield "assertion error"
+
+        
         # this case was added by us for debuggning purposes
         case _:
             raise NotImplementedError(f"Unimplemented opcode at {pc}: {opr} ({opr!r})")
@@ -163,7 +228,7 @@ class AbstractInterpreter:
         return AbstractInterpreter(bc, worklist, states)
 
     def step(self) -> tuple[PC, set[str]]:
-        pc = self.worklist.pop()
+        pc = self.worklist.popleft() # pop for DFS, popleft for BFS
 
         print(f"Stepping {pc}:\n > {self.bc[pc]}", file=sys.stderr)
 
