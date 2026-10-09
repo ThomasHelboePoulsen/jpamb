@@ -150,6 +150,15 @@ def manystep(
         case jvm.Load(index=i):
             va = state.load(i)
             yield (pc + 1, state.push(va))
+        case jvm.Push(value=str()):
+            # strings are abstracted as a non-null reference
+            yield (pc + 1, state.push(SignSet.from_sign("+")))
+        case jvm.InvokeVirtual(method=m) if m.extension.name == "equals":
+            (recv, _), after = state.pop(2)
+            if StackInt(0) in recv:
+                yield "null pointer"
+            if recv.signs - {0}:
+                yield (pc + 1, after.push(SignSet.from_sign("0+")))  # false or true
         case jvm.Push(type=t,value=i):
             assert isinstance(t,jvm.StackType)
             yield (pc+1,state.push(SignSet.abstract([StackInt(i)])))
@@ -214,7 +223,7 @@ def initialstate(
                     locals[i] = SignSet.abstract([StackInt(int(value))])
                 case jpamb.case.Int(value=value):
                     locals[i] = SignSet.abstract([StackInt(int(value))])
-                case jpamb.case.Array():
+                case jpamb.case.Array() | jpamb.case.String():
                     locals[i] = SignSet.from_sign("+")
                 case _:
                     raise NotImplementedError(f"Unsupported value {x!r}")
@@ -304,14 +313,18 @@ def interpret():
     x = jpamb.emit_init(ai.states)
     # to watch for infinite loops
     all_finals = set()
+    emitted = set()
     last_pc = next(iter(ai.states.keys())) # serves as anchor to ensure pc isnt unbound
     while steps > 0 and ai.worklist:
         pc, final = ai.step()
-        for f in final:
+        for f in final - all_finals:  # report each outcome once, saves step budget
             jpamb.emit_step(x, pc, f, depth=1)
             all_finals.add(f)
             steps -= 1
 
+        if pc in emitted:  # revisits add no coverage, skip to save step budget
+            continue
+        emitted.add(pc)
         x = jpamb.emit_step(x, pc, ai.states, depth=1)
         steps -= 1
     if not all_finals: # 
