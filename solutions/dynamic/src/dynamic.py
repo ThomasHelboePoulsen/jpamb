@@ -1,12 +1,14 @@
 import random
 import sys
+import string
 
 import jpamb
 import jvm
 import jvm.state as jvmc
 
-#our group has added these imports:
-import string
+from java_literals import generate_inputs_from_dict
+from state_snapshot import state_snapshot
+
 
 def binary(op, v1: int, v2: int) -> int | str:
     match op:
@@ -56,7 +58,7 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
     pc = frame.pc
     opr = bc[pc]
     output = state
-    print(f"Stepping {pc}:\n > {opr}", file=sys.stderr)
+    #print(f"Stepping {pc}:\n > {opr}", file=sys.stderr)
     match opr:
         case jvm.Push(type=t, value=v):
             
@@ -91,7 +93,14 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                 frame.stack.push(jvmc.StackInt(value))
                 frame.pc += 1
 
-        case jvm.Return(type=jvm.Int()):
+        case jvm.Return(type=None):
+                    state.frames.pop()
+                    if state.frames:
+                        frame = state.frames.peek()
+                        frame.pc += 1
+                    else:
+                        output = "ok"
+        case jvm.Return(type=return_type):
             v1 = frame.stack.pop()
             state.frames.pop()
             if state.frames:
@@ -101,13 +110,7 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
             else:
                 output = "ok"
                 
-        case jvm.Return(type=none):
-            state.frames.pop()
-            if state.frames:
-                frame = state.frames.peek()
-                frame.pc += 1
-            else:
-                output = "ok"
+        
 
         case jvm.Get(static=True, field=field):
             # Hack - Only handle the assertion case
@@ -149,12 +152,16 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
             count =  frame.stack.pop()
             assert isinstance(count, jvmc.StackInt), f"expected int, but got {count}"
             assert count.value>=0, f"expected non negative array size, but got {count} "
-            try:
-                ref = state.heap.new(jvmc.HeapArray(jvm.Int(), [0] * count.value))
-                frame.stack.push(ref)
-                frame.pc += 1
-            except MemoryError:
-                raise Exception("failed to create array, array too large for memory")
+
+            if count.value >= 10_000_000:
+                output = "out of memory"
+            else:  
+                try:
+                    ref = state.heap.new(jvmc.HeapArray(jvm.Int(), [0] * count.value))
+                    frame.stack.push(ref)
+                    frame.pc += 1
+                except MemoryError:
+                    output =  "out of memory"
 
         case jvm.ArrayStore(type=jvm.Int()):
             value, index, ref = frame.stack.pop(), frame.stack.pop(), frame.stack.pop()
@@ -298,6 +305,13 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                         f"Unsupported virtual method: {method.extension.name}"
                     )
 
+        case jvm.Negate(type = jvm.Int()):
+            v = frame.stack.pop()
+            assert isinstance(v,jvmc.StackInt)
+            negv =  binary(jvm.BinaryOpr.Sub,0,v.value)
+            frame.stack.push(jvmc.StackInt(negv))
+            frame.pc+=1
+
             
         case a:
             raise NotImplementedError(a.help())
@@ -410,15 +424,19 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
 
     return jpamb.case.Input(input)
 
+def analysis_inputs(methodid, suite):
+    if not methodid.extension.params:
+        yield jpamb.case.Input([])
+        return
 
-
-
-    
-
+    rand = random.Random(0)
+    for _ in range(10):
+        yield fuzz_input(rand, methodid)
+    yield from generate_inputs_from_dict(methodid, suite)
 
 
 def analyse():
-    """The dynamic analysis, e.g. in this case a (dumb) fuzzer."""
+    """The dynamic analysis, dumb fuzzer + dictionary."""
 
     methodid = jpamb.getmethodid(
         "dynamic",
@@ -431,25 +449,26 @@ def analyse():
     suite, eff = jpamb.setup()
     bc = jpamb.Bytecode(suite, eff, {})
 
-    MAX_STEPS = 200
-
-    import random
-
-    # Make the randomness deterministic
-    rand = random.Random(0)
+    MAX_STEPS = 2000
 
     behaviors = set()
-    # Try 10 random inputs
-    for i in range(10):
-        input = fuzz_input(rand, methodid)
+    for input in analysis_inputs(methodid, suite):
         state = initial(bc, methodid, input)
-
+        seen_states = set()
         for x in range(MAX_STEPS):
-            _, state = step(bc, state)
+            pc, state = step(bc, state)
             if isinstance(state, str):
                 behaviors.add(state)
                 break
+            snapshot = state_snapshot(state)
+            if snapshot in seen_states:
+                behaviors.add("*")
+                break
+                
+            seen_states.add(snapshot)
+   
 
+        
     for query in jpamb.QUERIES:
         if query in behaviors:
             if query == "*":
