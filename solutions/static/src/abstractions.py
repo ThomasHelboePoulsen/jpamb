@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Literal, Self
+from unittest import result
 
 import jvm
 import jvm.state as jvms
@@ -402,23 +403,102 @@ class Interval(Abstraction, Lattice):
 
     @classmethod
     def abstract(cls, values: Iterable[jvms.StackValue]) -> Self:
-        raise NotImplementedError("TODO")
-
+        vals = [v.value for v in values]
+        if not vals:
+            return cls(min=1, max=0)
+        return cls(min=min(vals), max=max(vals))
     def __contains__(self, value: jvms.StackValue) -> bool:
-        raise NotImplementedError("TODO")
-
+        if self.min is not None and value.value < self.min:
+            return False
+        if self.max is not None and value.value > self.max:
+            return False
+        return True
+    @property
+    def is_bot(self) -> bool:
+        return self.min is not None and self.max is not None and self.min > self.max
     @classmethod
     def top(cls) -> Self:
-        raise NotImplementedError("TODO")
+        return cls(min=None, max=None)
 
     def __or__(self, other: "Interval") -> "Interval":
-        raise NotImplementedError("TODO")
+        if self.is_bot: return other
+        if other.is_bot: return self
+        if self.min is None or other.min is None:
+            new_min = None
+        else:
+            new_min = min(self.min, other.min)
+        if self.max is None or other.max is None:
+            new_max = None
+        else:
+            new_max = max(self.max, other.max)
+        
+        return Interval(min=new_min, max=new_max)
 
     def __and__(self, other: "Interval") -> "Interval":
-        raise NotImplementedError("TODO")
+        if self.is_bot: return self
+        if other.is_bot: return other
+        if self.min is None and  other.min is None:
+            new_min = None
+        elif self.min is None:
+            new_min = other.min
+        elif other.min is None:
+            new_min = self.min
+        else:
+            new_min = max(self.min, other.min)
+
+        if self.max is None and other.max is None:
+            new_max = None
+        elif self.max is None:
+            new_max = other.max
+        elif other.max is None:
+            new_max = self.max
+        else:
+            new_max = min(self.max, other.max)
+        result = Interval(min=new_min, max=new_max)
+        if result.is_bot:
+            return Interval(min=1, max=0)
+        return result
 
     def __lt__(self, other: "Interval") -> bool:
-        raise NotImplementedError("TODO")
+        if self == other:
+            return False
+        if self.min is None and other.min is None:
+            lowerbound = True
+        elif self.min is None:
+            lowerbound = False
+        elif other.min is None:
+            lowerbound = True
+        else:
+            lowerbound = False if self.min < other.min else True
+
+        if self.max is None and other.max is None:
+            upperbound = True
+        elif self.max is None:
+            upperbound = False
+        elif other.max is None:
+            upperbound = True
+        else:
+            upperbound = True if self.max <= other.max else False
+        return lowerbound and upperbound
 
     def __gt__(self, other: "Interval") -> bool:
-        raise NotImplementedError("TODO")
+        if self == other:
+            return False
+        if self.min is None and other.min is None:
+            lowerbound = True
+        elif self.min is None:
+            lowerbound = True
+        elif other.min is None:
+            lowerbound = False
+        else:
+            lowerbound = False if self.min > other.min else True
+
+        if self.max is None and other.max is None:
+            upperbound = True
+        elif self.max is None:
+            upperbound = True
+        elif other.max is None:
+            upperbound = False
+        else:
+            upperbound = True if self.max >= other.max else False
+        return lowerbound and upperbound

@@ -108,19 +108,19 @@ def st_interval(draw):
     return ab.Interval(min, max)
 
 
-@pytest.mark.skip("todo")
+
 @given(st_interval(), st_interval(), st_interval())
 def test_interval_is_poset(a: ab.Interval, b: ab.Interval, c: ab.Interval):
     ab.is_poset(a, b, c)
 
 
-@pytest.mark.skip("todo")
+
 @given(st_interval(), st_interval(), st_interval())
 def test_interval_is_lattice(a: ab.Interval, b: ab.Interval, c: ab.Interval):
     ab.is_lattice(a, b, c)
 
 
-@pytest.mark.skip("todo")
+
 @given(st.sets(st_stack_ints()), st_interval())
 def test_lnterval_is_galoi(a: set[jvms.StackInt], b: ab.Interval):
     ab.is_galoi(a, b)
