@@ -124,3 +124,42 @@ def test_interval_is_lattice(a: ab.Interval, b: ab.Interval, c: ab.Interval):
 @given(st.sets(st_stack_ints()), st_interval())
 def test_lnterval_is_galoi(a: set[jvms.StackInt], b: ab.Interval):
     ab.is_galoi(a, b)
+
+from hypothesis import given
+from hypothesis.strategies import integers, sets
+
+@given(sets(integers()))
+def test_interval_abstraction_valid(xs):
+  r = ab.Interval.abstract(xs) 
+  assert all(x in r for x in xs)
+
+@given(sets(integers()), sets(integers()))
+def test_interval_abstraction_distributes(xs, ys):
+  assert (ab.Interval.abstract(xs) | ab.Interval.abstract(ys)) == ab.Interval.abstract(xs | ys)
+
+@given(sets(integers()), sets(integers()))
+def test_interval_abstraction_add(xs,ys):
+  r = ab.Interval.abstract(xs) + ab.Interval.abstract(ys)
+  assert all(x + y in r for x in xs for y in ys)
+
+@given(sets(integers()), sets(integers()))
+def test_interval_abstraction_sub(xs,ys):
+  r = ab.Interval.abstract(xs) - ab.Interval.abstract(ys)
+  assert all(x - y in r for x in xs for y in ys)
+
+@given(sets(integers()), sets(integers()))
+def test_interval_abstraction_div(xs,ys):
+  r = ab.Interval.abstract(xs) / ab.Interval.abstract(ys)
+  assert all(x // y in r for x in xs for y in ys if y != 0)
+
+
+@given(sets(integers()), sets(integers()))
+def test_interval_abstraction_mul(xs,ys):
+  r = ab.Interval.abstract(xs) * ab.Interval.abstract(ys)
+  assert all(x * y in r for x in xs for y in ys)
+
+
+@given(sets(integers()), sets(integers()))
+def test_interval_abstraction_rem(xs,ys):
+  r = ab.Interval.abstract(xs) % ab.Interval.abstract(ys)
+  assert all(x % y in r for x in xs for y in ys if y != 0)

@@ -403,14 +403,17 @@ class Interval(Abstraction, Lattice):
 
     @classmethod
     def abstract(cls, values: Iterable[jvms.StackValue]) -> Self:
-        vals = [v.value for v in values]
+        if not isinstance(values, Iterable):
+            values = [values]
+        vals = [v.value if hasattr(v, "value") else v for v in values]
         if not vals:
             return cls(min=1, max=0)
         return cls(min=min(vals), max=max(vals))
     def __contains__(self, value: jvms.StackValue) -> bool:
-        if self.min is not None and value.value < self.min:
+        val = value.value if hasattr(value, "value") else value
+        if self.min is not None and val < self.min:
             return False
-        if self.max is not None and value.value > self.max:
+        if self.max is not None and val > self.max:
             return False
         return True
     @property
@@ -502,3 +505,197 @@ class Interval(Abstraction, Lattice):
         else:
             upperbound = True if self.max >= other.max else False
         return lowerbound and upperbound
+
+    def __eq__(self, other: "Interval") -> bool:
+        return self.min == other.min and self.max == other.max
+    def __add__(self, other: "Interval") -> "Interval":
+        if self.is_bot: return other
+        if other.is_bot: return self
+        new_min = None
+        new_max = None
+        if self.min is not None and other.min is not None:
+            new_min = self.min + other.min
+        else:
+            new_min = None
+        if self.max is not None and other.max is not None:
+            new_max = self.max + other.max
+        else:
+            new_max = None
+        return Interval(min=new_min, max=new_max)
+    def __sub__(self, other: "Interval") -> "Interval":
+        if self.is_bot: return other
+        if other.is_bot: return self
+        new_min = None
+        new_max = None
+        if self.min is not None and other.max is not None:
+            new_min = self.min - other.max
+        else:
+            new_min = None
+
+        if self.max is not None and other.min is not None:
+            new_max = self.max - other.min
+        else:
+            new_max = None
+
+        return Interval(min=new_min, max=new_max)
+
+    def __truediv__(self, other: "Interval") -> "Interval":
+
+        if self.is_bot: return self
+        if other.is_bot: return self
+
+        if other.min == 0 and other.max == 0:
+            return Interval(min=1, max=0)
+        
+        contains_zero = (other.min is None or other.min <= 0) and (other.max is None or other.max >= 0)
+        if contains_zero:
+            return Interval(min=None, max=None) # if 0 is a possibility in the divisor, the result can be unbounded (infinity)
+
+       
+        if self.min is None or self.max is None or other.min is None or other.max is None:
+            return Interval(min=None, max=None) # if any of the bounds are unbounded, the result can be unbounded (infinity)
+
+        # all possible bounds
+        corners = [
+            self.min // other.min,
+            self.min // other.max,
+            self.max // other.min,
+            self.max // other.max
+        ]
+        
+        return Interval(min=min(corners), max=max(corners))
+    def __mul__(self,other: "Interval") -> "Interval":
+        if self.is_bot: return self
+        if other.is_bot: return self
+        if self.min is None or self.max is None or other.min is None or other.max is None:
+            return Interval(min=None, max=None) # if any of the bounds are unbounded, the result can be unbounded (infinity)
+        # all possible bounds
+        corners = [
+            self.min * other.min,
+            self.min * other.max,
+            self.max * other.min,
+            self.max * other.max
+        ]        
+        return Interval(min=min(corners), max=max(corners))
+    def __mod__(self, other: "Interval") -> "Interval":
+        if self.is_bot: return self
+        if other.is_bot: return other
+
+        if other.min == 0 and other.max == 0:
+            return Interval(min=1, max=0)
+
+        # Calculate the lowest possible remainder
+        if other.min is None:
+            new_min = None
+        elif other.min < 0:
+            new_min = other.min + 1  
+        else:
+            new_min = 0              
+
+        # Calculate the highest possible remainder
+        if other.max is None:
+            new_max = None
+        elif other.max > 0:
+            new_max = other.max - 1 
+        else:
+            new_max = 0              
+        return Interval(min=new_min, max=new_max)
+
+    def arithmetic(self, other: "Interval", opr: jvm.BinaryOpr) -> tuple["Interval", set[str]]:
+        errors = set()
+        match opr:
+            case jvm.BinaryOpr.Add:
+                res = self + other
+            case jvm.BinaryOpr.Sub:
+                res = self - other
+            case jvm.BinaryOpr.Mul:
+                res = self * other
+            case jvm.BinaryOpr.Div:
+                res = self / other
+                if other.min == 0 and other.max == 0:
+                    errors.add("divide by zero")
+                elif (other.min is None or other.min <= 0) and (other.max is None or other.max >= 0):
+                    errors.add("divide by zero")
+            case jvm.BinaryOpr.Rem:
+                res = self % other
+                if other.min == 0 and other.max == 0:
+                    errors.add("divide by zero")
+                elif (other.min is None or other.min <= 0) and (other.max is None or other.max >= 0):
+                    errors.add("divide by zero")
+            case _:
+                raise NotImplementedError(f"Unsupported operation: {opr}")
+                
+        return res, errors
+    def compare(self, other: "Interval", opr: jvm.CmpOpr) -> Iterable[bool]:
+        if self.is_bot or other.is_bot:
+            return []
+
+        match opr:
+            case jvm.CmpOpr.Le: 
+                if self.max is not None and other.min is not None and self.max <= other.min:
+                    return [True]
+                if self.min is not None and other.max is not None and self.min > other.max:
+                    return [False]
+                return [True, False]
+
+            case jvm.CmpOpr.Ge: 
+                if self.min is not None and other.max is not None and self.min >= other.max:
+                    return [True]
+                if self.max is not None and other.min is not None and self.max < other.min:
+                    return [False]
+                return [True, False]
+
+            case jvm.CmpOpr.Gt: 
+                if self.min is not None and other.max is not None and self.min > other.max:
+                    return [True]
+                if self.max is not None and other.min is not None and self.max <= other.min:
+                    return [False]
+                return [True, False]
+
+            case jvm.CmpOpr.Lt: 
+                if self.max is not None and other.min is not None and self.max < other.min:
+                    return [True]
+                if self.min is not None and other.max is not None and self.min >= other.max:
+                    return [False]
+                return [True, False]
+
+            case jvm.CmpOpr.Eq: 
+                
+                if (self.max is not None and other.min is not None and self.max < other.min) or \
+                   (self.min is not None and other.max is not None and self.min > other.max):
+                    return [False]
+               
+                if self.min == self.max == other.min == other.max and self.min is not None:
+                    return [True]
+                return [True, False]
+
+            case jvm.CmpOpr.Ne: # 
+                
+                if (self.max is not None and other.min is not None and self.max < other.min) or \
+                   (self.min is not None and other.max is not None and self.min > other.max):
+                    return [True]
+              
+                if self.min == self.max == other.min == other.max and self.min is not None:
+                    return [False]
+                return [True, False]
+    def widen(self, other: "Interval",K:list[int]) -> "Interval":
+        if self.is_bot: return other
+        if other.is_bot: return self
+        if K is None:
+            K = [] 
+        if self.min is None or other.min is None or other.min < self.min:
+         
+            candidates = [k for k in K if other.min is not None and k <= other.min]
+            new_min = max(candidates) if candidates else None
+        else:
+            new_min = self.min
+        if self.max is None or other.max is None or other.max > self.max:
+          
+            candidates = [k for k in K if other.max is not None and k >= other.max]
+            new_max = min(candidates) if candidates else None
+        else:
+            new_max = self.max
+            
+        return Interval(min=new_min, max=new_max)
+
+    
