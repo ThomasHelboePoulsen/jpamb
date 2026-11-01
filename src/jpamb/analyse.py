@@ -277,6 +277,7 @@ class Config:
         iterations: int,
         eff: Effect,
     ) -> "Self":
+        print("from_cmd experiments is:" , experiments); 
         info = AnalysisInfo.from_cmd(
             cmd,
             timeout=timeout,

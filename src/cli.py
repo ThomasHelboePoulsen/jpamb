@@ -151,7 +151,9 @@ def interpret(
     benchmark = ctx.suite.benchmark(eff=eff)
 
     experiments = []
+    
     for experiment in sorted(benchmark.experiments):
+        print("experiment is: ", experiment)
         if not filter.search(str(experiment)):
             eff.debug(f"Skipping {experiment}, excluded by filter")
             continue
@@ -308,6 +310,7 @@ def analyse(
             eff=eff,
             **kwargs,
         )
+        print("config is: ",config)
     except Exception as e:  # ruff: ignore[BLE001]
         eff.debug(f"Error: {e}")
         eff.error("Failed to instantiate config")
