@@ -343,6 +343,7 @@ def initial(bc: jpamb.Bytecode, methodid: jvm.AbsMethodID, input: jpamb.Input):
             case jpamb.case.String(value=value):
                 ref = state.heap.new(jvmc.HeapString(value))
                 frame.locals[i] = ref
+            
             case a:
                 raise NotImplementedError(
                     f"Do not know how to convert values of type {a!r} to a local value"

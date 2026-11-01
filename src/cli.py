@@ -458,7 +458,7 @@ def build(ctx, compile, document, test, benchmark):
         ctx.suite.test(docker=docker, eff=ctx.eff)
 
     if benchmark:
-        tools = ["solution-dynamic-interpreter"]
+        tools = ["dynamic-interpreter"]
         tool_configs = []
         for tool in tools:
             tool_bin = shutil.which(tool)
@@ -476,8 +476,13 @@ def build(ctx, compile, document, test, benchmark):
             )
             tool_configs.append(config)
 
-        if tools:
-            ctx.suite.run_benchmark(*tool_configs, eff=ctx.eff)
+        if not tool_configs:
+            raise click.ClickException(
+                "No benchmark interpreter is installed. "
+                "Install the dynamic solution and retry."
+            )
+
+        ctx.suite.run_benchmark(*tool_configs, eff=ctx.eff)
 
 
 @cli.command()
