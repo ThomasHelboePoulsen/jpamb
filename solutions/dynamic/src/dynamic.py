@@ -454,6 +454,7 @@ def analyse():
 
     behaviors = set()
     for input in analysis_inputs(methodid, suite):
+        
         state = initial(bc, methodid, input)
         seen_states = set()
         for x in range(MAX_STEPS):
