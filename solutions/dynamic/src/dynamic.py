@@ -343,7 +343,13 @@ def initial(bc: jpamb.Bytecode, methodid: jvm.AbsMethodID, input: jpamb.Input):
             case jpamb.case.String(value=value):
                 ref = state.heap.new(jvmc.HeapString(value))
                 frame.locals[i] = ref
-            
+            case jpamb.case.Smith(value=value):
+                stringField = jvm.FieldID("bitstring", jvm.Reference())
+                indexField = jvm.FieldID("index",jvm.Int())
+                heapSt  = state.heap.new(jvmc.HeapString(value))
+                heapOb= jvmc.HeapObject(jvm.ClassName("BitSmith"), {stringField: heapSt, indexField:jvmc.StackInt(0)})
+                ref = state.heap.new(heapOb)
+                frame.locals[i] = ref
             case a:
                 raise NotImplementedError(
                     f"Do not know how to convert values of type {a!r} to a local value"
