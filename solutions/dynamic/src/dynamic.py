@@ -52,6 +52,26 @@ def compare(op, v1: int, v2: int) -> bool:
             raise NotImplementedError(f"Unhandled comparation {op!r}")
 
 
+def draw_bit(state: jvmc.State, ref: jvmc.StackReference) -> bool | str:
+    smith = state.heap[ref]
+    assert isinstance(smith, jvmc.HeapObject)
+    bits_field = jvm.FieldID(
+        "bits", jvm.Object(jvm.ClassName("java.lang.String"))
+    )
+    index_field = jvm.FieldID("index", jvm.Int())
+    bits_ref = smith.fields[bits_field]
+    index = smith.fields[index_field]
+    assert isinstance(bits_ref, jvmc.StackReference)
+    assert isinstance(index, jvmc.StackInt)
+    bits = state.heap[bits_ref]
+    assert isinstance(bits, jvmc.HeapString)
+    if index.value >= len(bits.content):
+        return "illegal state"
+
+    smith.fields[index_field] = jvmc.StackInt(index.value + 1)
+    return bits.content[index.value] != "0"
+
+
 def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | str]:
     assert isinstance(state, jvmc.State), f"expected state but got {state}"
     frame = state.frames.peek()
@@ -287,24 +307,12 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                 if method.extension.name == "draw":
                     assert not method.extension.params
                     assert isinstance(method.extension.return_type, jvm.Boolean)
-                    smith = state.heap[ref]
-                    assert isinstance(smith, jvmc.HeapObject)
-                    bits_field = jvm.FieldID(
-                        "bits", jvm.Object(jvm.ClassName("java.lang.String"))
-                    )
-                    index_field = jvm.FieldID("index", jvm.Int())
-                    bits_ref = smith.fields[bits_field]
-                    index = smith.fields[index_field]
-                    assert isinstance(bits_ref, jvmc.StackReference)
-                    assert isinstance(index, jvmc.StackInt)
-                    bits = state.heap[bits_ref]
-                    assert isinstance(bits, jvmc.HeapString)
-                    if index.value >= len(bits.content):
-                        output = "assertion error"
+                    value = draw_bit(state, ref)
+                    if isinstance(value, str):
+                        output = value
                     else:
-                        smith.fields[index_field] = jvmc.StackInt(index.value + 1)
                         frame.stack.push(
-                            jvmc.StackInt(1 if bits.content[index.value] != "0" else 0)
+                            jvmc.StackInt(1 if value else 0)
                         )
                         frame.pc += 1
                 else:
@@ -476,6 +484,10 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
                 rand_length = rand.randint(0, 10000)
                 random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=rand_length))
                 input.append(jpamb.case.String(random_string))
+            case jvm.Object(jvm.ClassName("jpamb.utils.Smith")):
+                rand_length = rand.randint(0, 10000)
+                random_bits = "".join(rand.choice("01") for _ in range(rand_length))
+                input.append(jpamb.case.Smith(random_bits))
 
             case a:
                 raise NotImplementedError(
