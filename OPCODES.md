@@ -1,14 +1,14 @@
 #Bytecode instructions
 | Mnemonic | Opcode Name |  Exists in |  Count |
 | :---- | :---- | :----- | -----: |
-| [iconst_i](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.iconst_i) | [Push](utils/jvm/opcode.py?plain=1#L102) |  Arrays Dependent Loops Randomness Simple Tricky | 228 |
-| [iload_n](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.iload_n) | [Load](utils/jvm/opcode.py?plain=1#L735) |  Arrays Dependent Loops Randomness Simple Tricky | 222 |
-| [if_cond](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.if_cond) | [Ifz](utils/jvm/opcode.py?plain=1#L903) |  Arrays Dependent Loops Randomness Simple Strings Tricky | 130 |
+| [iconst_i](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.iconst_i) | [Push](utils/jvm/opcode.py?plain=1#L102) |  Arrays Dependent Loops Simple Tricky | 225 |
+| [iload_n](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.iload_n) | [Load](utils/jvm/opcode.py?plain=1#L735) |  Arrays Dependent Loops Simple Tricky | 219 |
+| [if_cond](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.if_cond) | [Ifz](utils/jvm/opcode.py?plain=1#L903) |  Arrays Dependent Loops Randomness Simple Strings Tricky | 133 |
 | [dup](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.dup) | [Dup](utils/jvm/opcode.py?plain=1#L258) |  Arrays Loops Randomness Simple Strings Tricky | 116 |
 | [return](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.return) | [Return](utils/jvm/opcode.py?plain=1#L1125) |  Arrays Calls Loops Randomness Strings Tricky | 88 |
 | [ldc](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.ldc) | [Push](utils/jvm/opcode.py?plain=1#L102) |  Arrays Strings | 75 |
-| [if_icmp_cond](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.if_icmp_cond) | [If](utils/jvm/opcode.py?plain=1#L774) |  Arrays Randomness Tricky | 72 |
-| [aload_n](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.aload_n) | [Load](utils/jvm/opcode.py?plain=1#L735) |  Arrays Strings | 70 |
+| [aload_n](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.aload_n) | [Load](utils/jvm/opcode.py?plain=1#L735) |  Arrays Randomness Strings | 73 |
+| [if_icmp_cond](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.if_icmp_cond) | [If](utils/jvm/opcode.py?plain=1#L774) |  Arrays Tricky | 69 |
 | [istore_n](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.istore_n) | [Store](utils/jvm/opcode.py?plain=1#L585) |  Arrays Loops Tricky | 68 |
 | [getstatic](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.getstatic) | [Get](utils/jvm/opcode.py?plain=1#L841) |  Arrays Loops Randomness Simple Strings Tricky | 66 |
 | [new](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.new) | [New](utils/jvm/opcode.py?plain=1#L973) |  Arrays Loops Randomness Simple Strings Tricky | 66 |
@@ -32,6 +32,7 @@
 | [aconst_null](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.aconst_null) | [Push](utils/jvm/opcode.py?plain=1#L102) |  | 7 |
 | [istore](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.istore) | [Store](utils/jvm/opcode.py?plain=1#L585) |  Arrays | 7 |
 | [imul](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.imul) | [Binary](utils/jvm/opcode.py?plain=1#L698) |  Tricky | 5 |
+| [invokeinterface](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.invokeinterface) | [InvokeInterface](utils/jvm/opcode.py?plain=1#L497) |  Randomness | 3 |
 | [invokevirtual](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.invokevirtual) | [InvokeVirtual](utils/jvm/opcode.py?plain=1#L427) |  Strings | 3 |
 | [irem](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.irem) | [Binary](utils/jvm/opcode.py?plain=1#L698) |  Tricky | 3 |
 | [i2s](https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-6.html#jvms-6.5.i2s) | [Cast](utils/jvm/opcode.py?plain=1#L325) |  Loops | 2 |
