@@ -439,6 +439,9 @@ class Case(sexpr.AsSExpr):
             m.group(3),
         )
 
+    def __str__(self) -> str:
+        return self.encode()
+
     def encode(self) -> str:
         return f"{self.methodid.classname}.{self.methodid.extension.encode()} {self.input.encode()} -> {self.result}"
 
@@ -463,7 +466,7 @@ class Coverage(sexpr.AsSExpr):
 
 @dataclass(frozen=True, slots=True)
 class Control(sexpr.AsSExpr):
-    coverage: dict[jvm.AbsMethodID, Coverage]
+    coverage: collections.OrderedDict[jvm.AbsMethodID, Coverage]
     results: set[str]
 
     def is_reachable(self, pc: jvm.state.PC) -> bool:
