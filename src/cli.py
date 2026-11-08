@@ -173,12 +173,7 @@ def interpret(
             **kwargs,
         )
     except Exception as e:  # ruff: ignore[BLE001]
-        eff.debug(f"Error: {e}")
-        eff.error("Failed to instantiate config")
-        sys.exit(1)
-
-    if config is None:
-        eff.debug("No config created")
+        eff.error(f"Error: {e}")
         eff.error("Failed to instantiate config")
         sys.exit(1)
 
@@ -204,7 +199,14 @@ def interpret(
     if state is None:
         state = jpamb.interpret.State(config)
 
-    for cont in iter(lambda: state.run_next(benchmark=benchmark, eff=eff), None):
+    for cont in iter(
+        lambda: state.run_next(
+            benchmark=benchmark,
+            workdir=ctx.suite.workdir,
+            eff=eff,
+        ),
+        None,
+    ):
         if step_wise and not cont:
             state.rewind()
             eff.error("Stopping early")
@@ -337,7 +339,12 @@ def analyse(
         state = jpamb.analyse.State(config)
 
     for cont in iter(
-        lambda: state.run_next(benchmark=benchmark, score_limit=score_limit, eff=eff),
+        lambda: state.run_next(
+            benchmark=benchmark,
+            score_limit=score_limit,
+            workdir=ctx.suite.workdir,
+            eff=eff,
+        ),
         None,
     ):
         if step_wise and not cont:
@@ -433,13 +440,19 @@ def validate(ctx, kind, report, format):
     default=None,
 )
 @click.option(
-    "--benchmark / --no-benchmark",
-    help="test that all cases are correct.",
+    "--benchmark",
+    help="benchmark the application against the executable.",
     default=None,
 )
 @click.pass_obj
 def build(ctx, compile, document, test, benchmark):
     """Rebuild all benchmarks."""
+
+    eff = ctx.eff
+
+    if ctx.suite.workdir != Path.cwd():
+        eff.warning(f"Changing to {ctx.suite.workdir}")
+        os.chdir(ctx.suite.workdir)
 
     if not any(s for s in [compile, document, test, benchmark]):
         compile = compile is None
