@@ -52,6 +52,26 @@ def compare(op, v1: int, v2: int) -> bool:
             raise NotImplementedError(f"Unhandled comparation {op!r}")
 
 
+def draw_bit(state: jvmc.State, ref: jvmc.StackReference) -> bool | str:
+    smith = state.heap[ref]
+    assert isinstance(smith, jvmc.HeapObject)
+    bits_field = jvm.FieldID(
+        "bits", jvm.Object(jvm.ClassName("java.lang.String"))
+    )
+    index_field = jvm.FieldID("index", jvm.Int())
+    bits_ref = smith.fields[bits_field]
+    index = smith.fields[index_field]
+    assert isinstance(bits_ref, jvmc.StackReference)
+    assert isinstance(index, jvmc.StackInt)
+    bits = state.heap[bits_ref]
+    assert isinstance(bits, jvmc.HeapString)
+    if index.value >= len(bits.content):
+        return "illegal state"
+
+    smith.fields[index_field] = jvmc.StackInt(index.value + 1)
+    return bits.content[index.value] != "0"
+
+
 def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | str]:
     assert isinstance(state, jvmc.State), f"expected state but got {state}"
     frame = state.frames.peek()
@@ -260,7 +280,46 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
             method_obj = bc.getmethod(method_id)
             new_frame =create_method_frame(method_obj,args)
             state.frames.push(new_frame)
-        
+
+        case jvm.InvokeInterface(method=method):
+            args = []
+            for p in method.extension.params:
+                v = frame.stack.pop()
+                match p:
+                    case jvm.Int():
+                        assert isinstance(v, jvmc.StackInt), f"expected int, but got {v}"
+                        args.append(v.value)
+                    case jvm.Reference() | jvm.Object():
+                        assert isinstance(v, jvmc.StackReference), (
+                            f"expected reference, but got {v}"
+                        )
+                        args.append(v.value)
+                    case a:
+                        raise NotImplementedError(
+                            f"Do not know how to handle parameter of type {a!r}"
+                        )
+            args.reverse()
+            ref = frame.stack.pop()
+            assert isinstance(ref, jvmc.StackReference), f"expected reference, but got {ref}"
+            if ref.value == 0:
+                output = "null pointer"
+            else:
+                if method.extension.name == "draw":
+                    assert not method.extension.params
+                    assert isinstance(method.extension.return_type, jvm.Boolean)
+                    value = draw_bit(state, ref)
+                    if isinstance(value, str):
+                        output = value
+                    else:
+                        frame.stack.push(
+                            jvmc.StackInt(1 if value else 0)
+                        )
+                        frame.pc += 1
+                else:
+                    raise NotImplementedError(
+                        f"Unsupported interface method: {method.extension.name}"
+                    )
+
         case jvm.InvokeVirtual(method=method):
             args = []
             for p in method.extension.params:
@@ -343,6 +402,15 @@ def initial(bc: jpamb.Bytecode, methodid: jvm.AbsMethodID, input: jpamb.Input):
             case jpamb.case.String(value=value):
                 ref = state.heap.new(jvmc.HeapString(value))
                 frame.locals[i] = ref
+            case jpamb.case.Smith(value=value):
+                stringField = jvm.FieldID(
+                    "bits", jvm.Object(jvm.ClassName("java.lang.String"))
+                )
+                indexField = jvm.FieldID("index", jvm.Int())
+                heapSt  = state.heap.new(jvmc.HeapString(value))
+                heapOb= jvmc.HeapObject(jvm.ClassName("jpamb.utils.Smith"), {stringField: heapSt, indexField:jvmc.StackInt(0)})
+                ref = state.heap.new(heapOb)
+                frame.locals[i] = ref
             case a:
                 raise NotImplementedError(
                     f"Do not know how to convert values of type {a!r} to a local value"
@@ -416,6 +484,10 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
                 rand_length = rand.randint(0, 10000)
                 random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=rand_length))
                 input.append(jpamb.case.String(random_string))
+            case jvm.Object(jvm.ClassName("jpamb.utils.Smith")):
+                rand_length = rand.randint(0, 10000)
+                random_bits = "".join(rand.choice("01") for _ in range(rand_length))
+                input.append(jpamb.case.Smith(random_bits))
 
             case a:
                 raise NotImplementedError(
@@ -453,6 +525,7 @@ def analyse():
 
     behaviors = set()
     for input in analysis_inputs(methodid, suite):
+        
         state = initial(bc, methodid, input)
         seen_states = set()
         for x in range(MAX_STEPS):

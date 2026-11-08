@@ -278,6 +278,7 @@ class Config:
         iterations: int,
         eff: Effect,
     ) -> "Self":
+     
         info = AnalysisInfo.from_cmd(
             cmd,
             timeout=timeout,

@@ -36,6 +36,10 @@ def string_candidates(literals):
     return list(values)
 
 
+def smith_candidates():
+    return ["", "0", "1", "01", "10", "01010101", "100000"]
+
+
 def character_candidates(literals):
     characters = {'\x00', 'a', '\uffff'}
     for text in literals.get(str, []):
@@ -106,6 +110,8 @@ def parameter_candidates(parameter_type, literals, raw_literals):
             return [jpamb.case.Boolean(True), jpamb.case.Boolean(False)]
         case jvm.Object(jvm.ClassName("java.lang.String")):
             return [jpamb.case.String(value) for value in string_candidates(literals)]
+        case jvm.Object(jvm.ClassName("jpamb.utils.Smith")):
+            return [jpamb.case.Smith(value) for value in smith_candidates()]
         case jvm.Array(contains=element_type):
             return array_candidates(element_type, literals, raw_literals)
         case _:

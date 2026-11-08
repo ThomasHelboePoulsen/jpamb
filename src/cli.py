@@ -151,7 +151,9 @@ def interpret(
     benchmark = ctx.suite.benchmark(eff=eff)
 
     experiments = []
+    
     for experiment in sorted(benchmark.experiments):
+       
         if not filter.search(str(experiment)):
             eff.debug(f"Skipping {experiment}, excluded by filter")
             continue
@@ -310,6 +312,7 @@ def analyse(
             eff=eff,
             **kwargs,
         )
+        
     except Exception as e:  # ruff: ignore[BLE001]
         eff.debug(f"Error: {e}")
         eff.error("Failed to instantiate config")
@@ -468,21 +471,31 @@ def build(ctx, compile, document, test, benchmark):
         ctx.suite.test(docker=docker, eff=ctx.eff)
 
     if benchmark:
-        tool_bin = shutil.which(benchmark)
-        if not tool_bin:
-            ctx.eff.error(f"did not have {benchmark} installed...")
-            sys.exit(1)
+        tools = ["dynamic-interpreter"]
+        tool_configs = []
+        for tool in tools:
+            tool_bin = shutil.which(tool)
+            if not tool_bin:
+                ctx.eff.warning(f"did not have {tool} installed...")
+                continue
 
-        config = jpamb.interpret.Config.from_cmd(
-            (tool_bin,),
-            experiments=[],
-            max_steps=100,
-            timeout=5.0,
-            eff=ctx.eff,
-            abstract=False,
-        )
+            config = jpamb.interpret.Config.from_cmd(
+                (tool_bin,),
+                experiments=[],
+                max_steps=100,
+                timeout=5.0,
+                eff=ctx.eff,
+                abstract=False,
+            )
+            tool_configs.append(config)
 
-        ctx.suite.run_benchmark(config, eff=ctx.eff)
+        if not tool_configs:
+            raise click.ClickException(
+                "No benchmark interpreter is installed. "
+                "Install the dynamic solution and retry."
+            )
+
+        ctx.suite.run_benchmark(*tool_configs, eff=ctx.eff)
 
 
 @cli.command()
