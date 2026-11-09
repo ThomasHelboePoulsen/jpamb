@@ -69,6 +69,7 @@ def main():
     """,
     )
 
+    method_node = None
     for snode in tree_sitter.QueryCursor(method_q).captures(node)["method"]:
         if not (p := snode.child_by_field_name("parameters")):
             log.debug(f"Could not find parameteres of {method_name}")
@@ -91,6 +92,7 @@ def main():
 
             # todo check for type.
         else:
+            method_node = snode
             break
     else:
         log.warning(
@@ -100,42 +102,60 @@ def main():
 
     # log.debug("Found method %s %s", method_name, node.range)
 
-    body = node.child_by_field_name("body")
+    assert method_node is not None
+    body = method_node.child_by_field_name("body")
     assert body and body.text
     for t in body.text.splitlines():
         log.debug("line: %s", t.decode())
 
-    assert_q = tree_sitter.Query(JAVA_LANGUAGE, """(assert_statement) @assert""")
+    def has_capture(query: str, capture: str) -> bool:
+        captures = tree_sitter.Query(
+            JAVA_LANGUAGE, query
+        )
+        return bool(
+            tree_sitter.QueryCursor(captures).captures(body).get(capture)
+        )
 
-    assert_found = any(
-        capture_name == "assert"
-        for capture_name, _ in tree_sitter.QueryCursor(assert_q).captures(body).items()
+    assert_found = has_capture("(assert_statement) @assert", "assert")
+    divide_found = has_capture(
+        '(binary_expression operator: "/") @divide', "divide"
+    )
+    infinite_loop_found = has_capture(
+        """
+        (while_statement
+          condition: (parenthesized_expression
+            (true)))
+        @infinite-loop
+        """,
+        "infinite-loop",
+    )
+    null_found = has_capture("(null_literal) @null", "null")
+
+    array_access_query = tree_sitter.Query(
+        JAVA_LANGUAGE,
+        """
+        (array_access
+          index: (_) @index) @array-access
+        """,
+    )
+    array_accesses = tree_sitter.QueryCursor(array_access_query).captures(body)
+    out_of_bounds_found = any(
+        node.type != "decimal_integer_literal"
+        or node.text not in {b"0"}
+        for node in array_accesses.get("index", [])
     )
 
-    if assert_found:
-        log.debug("Found assertion")
-        print("assertion error;found")
-    else:
-        log.debug("No assertion")
-        print("assertion error;not-found")
-
-
-    divide_q = tree_sitter.Query(JAVA_LANGUAGE, """(binary_expression operator: "/") @divide""")
-
-    divide_found = any(
-        capture_name == "divide"
-        for capture_name, _ in tree_sitter.QueryCursor(divide_q).captures(body).items()
-    )
-
-    if divide_found:
-        log.debug("Found division by zero")
-        print("divide by zero;found")
-    else:
-        log.debug("No divide by zero")
-        print("divide by zero;not-found")
-
-    for q in jpamb.QUERIES:
-        if q != "assertion error" and q != "divide by zero":
-            print(f"{q};skip")
+    results = {
+        "assertion error": assert_found,
+        "divide by zero": divide_found,
+        "null pointer": null_found,
+        "out of bounds": out_of_bounds_found,
+        "*": infinite_loop_found,
+    }
+    for query in jpamb.QUERIES:
+        if query in results:
+            print(f"{query};{'found' if results[query] else 'not-found'}")
+        else:
+            print(f"{query};skip")
 
     sys.exit(0)
