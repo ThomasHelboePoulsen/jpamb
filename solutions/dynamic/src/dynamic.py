@@ -72,6 +72,42 @@ def draw_bit(state: jvmc.State, ref: jvmc.StackReference) -> bool | str:
     return bits.content[index.value] != "0"
 
 
+def draw_int(state: jvmc.State, ref: jvmc.StackReference, count: int) -> int | str:
+    smith = state.heap[ref]
+    bits_field = jvm.FieldID("bits", jvm.Object(jvm.ClassName("java.lang.String")))
+    index_field = jvm.FieldID("index", jvm.Int())
+    bits_ref = smith.fields[bits_field]
+    index = smith.fields[index_field].value
+    bits = state.heap[bits_ref].content
+    if index + count >= len(bits):
+        return "illegal state"
+    value = 0
+    for bit in bits[index:index + count]:
+        value = value * 2 + int(bit)
+    smith.fields[index_field] = jvmc.StackInt(index + count)
+    # Keep the result in Java's int range: -2**31 to 2**31 - 1.
+    value = value % (2**32)
+    if value >= 2**31:
+        value -= 2**32
+    return value
+
+
+def jump_to_smith_catch(bc: jpamb.Bytecode, state: jvmc.State) -> jvmc.State | str:
+    """Jump to the Java catch block when Smith runs out of bits."""
+    frame = state.frames.peek()
+    method = bc.suite.findmethod(frame.pc.method, eff=bc.eff)
+    for catch in method["code"].get("exceptions", []):
+        right_type = catch["catchType"] == "java/lang/IllegalStateException"
+        inside_try = catch["start"] <= frame.pc.offset < catch["end"]
+        if right_type and inside_try:
+            exception = jvmc.HeapObject(jvm.ClassName("java.lang.IllegalStateException"), {})
+            frame.stack = jvmc.OperandStack()
+            frame.stack.push(state.heap.new(exception))
+            frame.pc = jvmc.PC(frame.pc.method, catch["handler"])
+            return state
+    return "illegal state"
+
+
 def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | str]:
     assert isinstance(state, jvmc.State), f"expected state but got {state}"
     frame = state.frames.peek()
@@ -305,14 +341,18 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                 output = "null pointer"
             else:
                 if method.extension.name == "draw":
-                    assert not method.extension.params
-                    assert isinstance(method.extension.return_type, jvm.Boolean)
-                    value = draw_bit(state, ref)
+                    if not args:
+                        assert isinstance(method.extension.return_type, jvm.Boolean)
+                        value = draw_bit(state, ref)
+                    else:
+                        assert len(args) == 1
+                        assert isinstance(method.extension.return_type, jvm.Int)
+                        value = draw_int(state, ref, args[0])
                     if isinstance(value, str):
-                        output = value
+                        output = jump_to_smith_catch(bc, state)
                     else:
                         frame.stack.push(
-                            jvmc.StackInt(1 if value else 0)
+                            jvmc.StackInt(int(value))
                         )
                         frame.pc += 1
                 else:
