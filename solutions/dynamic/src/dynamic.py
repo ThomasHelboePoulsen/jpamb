@@ -411,6 +411,61 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
             frame.stack.push(jvmc.StackInt(negv))
             frame.pc+=1
 
+        case jvm.Bitopr(type = jvm.Int(), operant = op):
+            match op:
+                case jvm.BitOpr.Shr:
+                    v2, v1 = frame.stack.pop(), frame.stack.pop()
+                    assert isinstance(v1,jvmc.StackInt)
+                    assert isinstance(v2,jvmc.StackInt)
+                    res = v1.value >> (v2.value & 0b11111)
+                    frame.stack.push(jvmc.StackInt(res))
+                    frame.pc += 1
+                case jvm.BitOpr.Shl:
+                    v2, v1 = frame.stack.pop(), frame.stack.pop()
+                    assert isinstance(v1,jvmc.StackInt)
+                    assert isinstance(v2,jvmc.StackInt)
+                    res = v1.value << (v2.value & 0b11111)
+                    res &= 0xFFFFFFFF
+                    if res >= 2**31:
+                        res -= 2**32
+                    frame.stack.push(jvmc.StackInt(res))
+                    frame.pc += 1
+                case jvm.BitOpr.And:
+                    v2, v1 = frame.stack.pop(), frame.stack.pop()
+                    assert isinstance(v1,jvmc.StackInt)
+                    assert isinstance(v2,jvmc.StackInt)
+                    res = v1.value & v2.value
+                    frame.stack.push(jvmc.StackInt(res))
+                    frame.pc += 1
+                case jvm.BitOpr.Or:
+                    v2, v1 = frame.stack.pop(), frame.stack.pop()
+                    assert isinstance(v1,jvmc.StackInt)
+                    assert isinstance(v2,jvmc.StackInt)
+                    res = v1.value | v2.value
+                    frame.stack.push(jvmc.StackInt(res))
+                    frame.pc += 1
+                case jvm.BitOpr.Xor:
+                    v2, v1 = frame.stack.pop(), frame.stack.pop()
+                    assert isinstance(v1,jvmc.StackInt)
+                    assert isinstance(v2,jvmc.StackInt)
+                    res = v1.value ^ v2.value
+                    frame.stack.push(jvmc.StackInt(res))
+                    frame.pc += 1
+                case jvm.BitOpr.Ushr:
+                    v2, v1 = frame.stack.pop(), frame.stack.pop()
+                    assert isinstance(v1,jvmc.StackInt)
+                    assert isinstance(v2,jvmc.StackInt)
+                    # Shift a nonnegative 32-bit pattern so zeros enter on the left.
+                    res = (v1.value & 0xFFFFFFFF) >> (v2.value & 0b11111)
+                    # Java still returns a signed int, including for a shift of zero.
+                    if res >= 2**31:
+                        res -= 2**32
+                    frame.stack.push(jvmc.StackInt(res))
+                    frame.pc += 1
+                case _:
+                    raise NotImplementedError(opr.help())
+
+
             
         case a:
             raise NotImplementedError(a.help())

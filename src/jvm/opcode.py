@@ -732,6 +732,72 @@ class Binary(Opcode):
         return self.real()
 
 
+class BitOpr(enum.Enum):
+    Shl = enum.auto()
+    Shr = enum.auto()
+    Ushr = enum.auto()
+    And = enum.auto()
+    Or = enum.auto()
+    Xor = enum.auto()
+
+    @staticmethod
+    def from_str(name: str) -> "BitOpr":
+        return BIT_OPRS[name.lower()]
+
+    @staticmethod
+    def from_json(json: str) -> "BitOpr":
+        return BitOpr.from_str(json)
+
+    def __str__(self):
+        return self.name.lower()
+
+    def __sexpr__(self) -> sexpr.SExpr:
+        return str(self)
+
+    @classmethod
+    def from_sexpr(cls, expr: sexpr.SExpr) -> "BitOpr":
+        return BitOpr.from_str(sexpr.to_str(expr))
+
+
+BIT_OPRS = {
+    'shl': BitOpr.Shl,
+    'shr': BitOpr.Shr,
+    'ushr': BitOpr.Ushr,
+    'and': BitOpr.And,
+    'or': BitOpr.Or,
+    'xor': BitOpr.Xor,
+}
+
+
+@dataclass(frozen=True, order=True)
+class Bitopr(Opcode):
+    type: jvm_type.Type
+    operant: BitOpr
+
+    @classmethod
+    def from_json(cls, json: dict) -> "Opcode":
+        return cls(
+            offset=json["offset"],
+            type=jvm_type.Type.from_json(json["type"]),
+            operant=BitOpr.from_json(json["operant"]),
+        )
+
+    def __str__(self):
+        return f"bitopr:{self.type} {self.operant}"
+
+    def real(self) -> str:
+        match self.type:
+            case jvm_type.Int():
+                return f"i{self.operant}"
+        raise NotImplementedError(f"Unhandled real {self!r}")
+
+    def semantics(self) -> str | None:
+        return None
+
+    def mnemonic(self) -> str:
+        return self.real()
+
+
 @dataclass(frozen=True, order=True)
 class Load(Opcode):
     """The load opcode that loads values from local variables"""
@@ -1220,4 +1286,5 @@ OPCODES = {
     "throw": Throw,
     "incr": Incr,
     "goto": Goto,
+    "bitopr": Bitopr,
 }

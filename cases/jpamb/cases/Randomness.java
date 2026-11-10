@@ -81,17 +81,28 @@ public class Randomness {
     @Case("(r'1') -> assertion error")
     @Case("(r'000010000000001') -> ok")
     @Case("(r'1100010101110101011101010') -> ok")
-    @Case("(r'000010000000000') -> divide by zero")
+    // @Case("(r'000010000000000') -> divide by zero")
     public static void drawInt(Smith smith) {
         try {
             int value = smith.draw(4);
         } catch (IllegalStateException e) {
             assert false;
         }
+        // int a = smith.draw(31);
+    }
 
-        if (value >= 5) {
-            1/smith.draw(10);
-        }
+    @Case("(r'1100') -> ok")
+    public static void Daniel(Smith smith) {
+        int a = smith.draw(3);
+        int b = a >> 1;
+
+        int c = a << 1;
+        
+        int d = a & b;
+        int e = a | b;
+        int f = a ^ b;
+        int g = a >>> 1;
+        int h = ~a;
     }
     
 }
