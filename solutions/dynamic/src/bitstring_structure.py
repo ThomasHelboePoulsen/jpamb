@@ -1,11 +1,6 @@
 """Syntactic analysis using tree-sitter to inspect deterministic randomness structure.
 
-Extracts the union of all reachable bit intervals consumed from `Smith`,
-exploring branches (if/else, ternaries, and loops) across multiple control-flow paths.
-
-Produces a deduplicated union list such as:
-    [("boolean", 0, 0), ("integer", 1, 32), ("boolean", 33, 33)]
-to guide structure-aware, coverage-based fuzzing on bitstrings.
+output list of tuples [(type,start_index,end_index),...]
 """
 
 from dataclasses import dataclass
@@ -28,9 +23,6 @@ class BitField:
     field_type: str  # "boolean" or "integer". might be extended with long and short etc if implemented.
     start_index: int  # Inclusive starting bit offset (e.g. 0)
     end_index: int  # Inclusive ending bit offset (e.g. 0 or 31)
-    bits: int  # Total number of bits in this segment
-    in_loop: bool = False  # True if draw occurs inside a loop
-    source_call: str = ""  # Source code representation, e.g. "smith.draw(4)"
 
     def as_tuple(self) -> tuple[str, int, int]:
         """Returns the format (type, startIndex, endIndex)."""
@@ -42,8 +34,8 @@ class PathState:
     """Represents the state of an execution path during AST traversal. 
     Similar to how static analysis is done. both possible realities are considered and executed."""
 
-    current_bit: int
-    fields: tuple[BitField, ...] # currently found bitfields
+    bit_cursor: int
+    bitfields: tuple[BitField, ...]  # currently found bitfields
 
 
 def parse_java_source(srcfile: Path | str) -> tree_sitter.Tree:
@@ -103,12 +95,165 @@ def get_class_methods(class_node: tree_sitter.Node) -> dict[str, tree_sitter.Nod
     return methods
 
 
-def execute_node_paths(
+def explore_branch(
     node: tree_sitter.Node,
-    smith_var: str,
+    smith_var_name: str,
     class_methods: dict[str, tree_sitter.Node],
     states: list[PathState],
-    in_loop: bool = False,
+    visited_methods: set[str],
+) -> list[PathState]:
+    """Explores both branches of an if-statement or ternary expression."""
+    cond = node.child_by_field_name("condition")
+    then_node = node.child_by_field_name("consequence")
+    else_node = node.child_by_field_name("alternative")
+
+    states_after_cond = (
+        execute_node_paths(cond, smith_var_name, class_methods, states, visited_methods)
+        if cond
+        else states
+    )
+    states_then = (
+        execute_node_paths(then_node, smith_var_name, class_methods, states_after_cond, visited_methods)
+        if then_node
+        else states_after_cond
+    )
+    states_else = (
+        execute_node_paths(else_node, smith_var_name, class_methods, states_after_cond, visited_methods)
+        if else_node
+        else states_after_cond
+    )
+    return states_then + states_else
+
+
+def explore_loop(
+    node: tree_sitter.Node,
+    smith_var_name: str,
+    class_methods: dict[str, tree_sitter.Node],
+    states: list[PathState],
+    visited_methods: set[str],
+) -> list[PathState]:
+    """Explores loop paths: one path skipping the loop, one path entering one iteration."""
+    cond = node.child_by_field_name("condition")
+    body = node.child_by_field_name("body")
+
+    states_after_cond = (
+        execute_node_paths(cond, smith_var_name, class_methods, states, visited_methods=visited_methods)
+        if cond
+        else states
+    )
+    states_skip = states_after_cond
+    states_iter = (
+        execute_node_paths(body, smith_var_name, class_methods, states_after_cond, visited_methods=visited_methods)
+        if body
+        else states_after_cond
+    )
+    return states_skip + states_iter
+
+
+def explore_smith_draw(
+    args: tree_sitter.Node | None,
+    states: list[PathState],
+) -> list[PathState]:
+    """Handles direct calls to smith.draw() (boolean) or smith.draw(bits) (integer)."""
+    arg_list = args.named_children if args else []
+    new_states: list[PathState] = []
+
+    for state in states:
+        cur = state.bit_cursor
+        if not arg_list:
+            # boolean (1 bit)
+            field = BitField(
+                field_type="boolean",
+                start_index=cur,
+                end_index=cur,
+            )
+            new_states.append(PathState(cur + 1, state.bitfields + (field,)))
+        else:
+            # integer (n bits)
+            try:
+                bits = int(arg_list[0].text.decode("utf-8"))
+            except (ValueError, AttributeError):
+                bits = 32
+            field = BitField(
+                field_type="integer",
+                start_index=cur,
+                end_index=cur + bits - 1,
+            )
+            new_states.append(PathState(cur + bits, state.bitfields + (field,)))
+
+    return new_states
+
+
+def explore_callee_invocation(
+    call_name: str,
+    args: tree_sitter.Node | None,
+    smith_var_name: str,
+    class_methods: dict[str, tree_sitter.Node],
+    states: list[PathState],
+    visited_methods: set[str],
+) -> list[PathState] | None:
+    """Explores internal helper method calls when smith is passed as an argument."""
+    callee_args = [
+        c.text.decode("utf-8")
+        for c in (args.named_children if args else [])
+    ]
+    if smith_var_name in callee_args and call_name not in visited_methods:
+        callee_node = class_methods[call_name]
+        c_smith = find_smith_parameter(callee_node)
+        if c_smith:
+            callee_body = callee_node.child_by_field_name("body")
+            if callee_body:
+                return execute_node_paths(
+                    callee_body,
+                    c_smith,
+                    class_methods,
+                    states,
+                    visited_methods=visited_methods | {call_name},
+                )
+    return None
+
+
+def explore_method_invocation(
+    node: tree_sitter.Node,
+    smith_var_name: str,
+    class_methods: dict[str, tree_sitter.Node],
+    states: list[PathState],
+    visited_methods: set[str],
+) -> list[PathState]:
+    """Dispatches method invocations: direct smith.draw, callee methods, or general calls."""
+    obj = node.child_by_field_name("object")
+    name = node.child_by_field_name("name")
+    args = node.child_by_field_name("arguments")
+
+    obj_name = obj.text.decode("utf-8") if obj else None
+    call_name = name.text.decode("utf-8") if name else None
+
+    # 1. Direct smith.draw() call
+    if obj_name == smith_var_name and call_name == "draw":
+        return explore_smith_draw(args, states)
+
+    # 2. Smith passed to an internal helper method
+    if (obj is None or obj_name == "this") and call_name in class_methods:
+        callee_result = explore_callee_invocation(
+            call_name, args, smith_var_name, class_methods, states, visited_methods
+        )
+        if callee_result is not None:
+            return callee_result
+
+    # 3. Default: recurse into children
+    cur_states = states
+    for child in node.named_children:
+        cur_states = execute_node_paths(
+            child, smith_var_name, class_methods, cur_states, visited_methods
+        )
+    return cur_states
+
+
+def execute_node_paths(
+    node: tree_sitter.Node,
+    smith_var_name: str,
+    class_methods: dict[str, tree_sitter.Node],
+    states: list[PathState],
     visited_methods: set[str] | None = None,
 ) -> list[PathState]:
     """Traverse an AST node over multiple path states, forking on branches.
@@ -120,198 +265,23 @@ def execute_node_paths(
     if not states:
         return []
 
-    
-    if node.type == "if_statement":
-        cond = node.child_by_field_name("condition")
-        then_node = node.child_by_field_name("consequence")
-        else_node = node.child_by_field_name("alternative")
+    match node.type:
+        case "if_statement" | "ternary_expression":
+            return explore_branch(node, smith_var_name, class_methods, states, visited_methods)
 
-        # execute the condition check. 
-        states_after_cond = (
-            execute_node_paths(
-                cond, smith_var, class_methods, states, in_loop, visited_methods
-            )
-            if cond
-            else states # malformed, return early. 
-        )
+        case "while_statement" | "for_statement" | "do_statement" | "enhanced_for_statement":
+            return explore_loop(node, smith_var_name, class_methods, states, visited_methods)
 
-        # execute the consequences branch. 
-        states_then = (
-            execute_node_paths(
-                then_node,
-                smith_var,
-                class_methods,
-                states_after_cond,
-                in_loop,
-                visited_methods,
-            )
-            if then_node
-            else states_after_cond
-        )
+        case "method_invocation":
+            return explore_method_invocation(node, smith_var_name, class_methods, states, visited_methods)
 
-        # execute the alternative branch.
-        if else_node:
-            states_else = execute_node_paths(
-                else_node,
-                smith_var,
-                class_methods,
-                states_after_cond,
-                in_loop,
-                visited_methods,
-            )
-        else:
-            states_else = states_after_cond
-
-        # return all possible states. 
-        return states_then + states_else
-
-    # same as above, just with ternary. 
-    if node.type == "ternary_expression":
-        cond = node.child_by_field_name("condition")
-        then_node = node.child_by_field_name("consequence")
-        else_node = node.child_by_field_name("alternative")
-
-        states_after_cond = (
-            execute_node_paths(
-                cond, smith_var, class_methods, states, in_loop, visited_methods
-            )
-            if cond
-            else states
-        )
-        states_then = (
-            execute_node_paths(
-                then_node,
-                smith_var,
-                class_methods,
-                states_after_cond,
-                in_loop,
-                visited_methods,
-            )
-            if then_node
-            else states_after_cond
-        )
-        states_else = (
-            execute_node_paths(
-                else_node,
-                smith_var,
-                class_methods,
-                states_after_cond,
-                in_loop,
-                visited_methods,
-            )
-            if else_node
-            else states_after_cond
-        )
-        return states_then + states_else
-
-    # looping. same as above. there is condition and then consequence and alternative. 
-    if node.type in {
-        "while_statement",
-        "for_statement",
-        "do_statement",
-        "enhanced_for_statement",
-    }:
-        cond = node.child_by_field_name("condition")
-        body = node.child_by_field_name("body")
-
-        states_after_cond = (
-            execute_node_paths(
-                cond, smith_var, class_methods, states, in_loop=True, visited_methods=visited_methods
-            )
-            if cond
-            else states
-        )
-
-        # alternative. i.e. loop was skipped. 
-        states_skip = states_after_cond
-
-        # consequence. sets "in loop" to true. 
-        states_iter = (
-            execute_node_paths(
-                body,
-                smith_var,
-                class_methods,
-                states_after_cond,
-                in_loop=True,
-                visited_methods=visited_methods,
-            )
-            if body
-            else states_after_cond
-        )
-
-        return states_skip + states_iter
-
-    # basecase, checks for calls to smith, or passing of smith.
-    if node.type == "method_invocation":
-        obj = node.child_by_field_name("object")
-        name = node.child_by_field_name("name")
-        args = node.child_by_field_name("arguments")
-
-        obj_name = obj.text.decode("utf-8") if obj else None
-        call_name = name.text.decode("utf-8") if name else None
-
-        # direct call
-        if obj_name == smith_var and call_name == "draw":
-            arg_list = args.named_children if args else []
-            new_states: list[PathState] = []
-            for st in states:
-                cur = st.current_bit
-                if not arg_list:
-                    # boolean (1 bit)
-                    field = BitField(
-                        field_type="boolean",
-                        start_index=cur,
-                        end_index=cur,
-                        bits=1,
-                        in_loop=in_loop,
-                        source_call=node.text.decode("utf-8"),
-                    )
-                    new_states.append(PathState(cur + 1, st.fields + (field,)))
-                else:
-                    # integer (n bits)
-                    try:
-                        bits = int(arg_list[0].text.decode("utf-8"))
-                    except (ValueError, AttributeError):
-                        bits = 32
-                    field = BitField(
-                        field_type="integer",
-                        start_index=cur,
-                        end_index=cur + bits - 1,
-                        bits=bits,
-                        in_loop=in_loop,
-                        source_call=node.text.decode("utf-8"),
-                    )
-                    new_states.append(PathState(cur + bits, st.fields + (field,)))
-            return new_states
-
-        # smith is passed to another method.
-        if (obj is None or obj_name == "this") and call_name in class_methods:
-            callee_args = [
-                c.text.decode("utf-8")
-                for c in (args.named_children if args else [])
-            ]
-            if smith_var in callee_args and call_name not in visited_methods:
-                callee_node = class_methods[call_name]
-                c_smith = find_smith_parameter(callee_node)
-                if c_smith:
-                    callee_body = callee_node.child_by_field_name("body")
-                    if callee_body:
-                        return execute_node_paths(
-                            callee_body,
-                            c_smith,
-                            class_methods,
-                            states,
-                            in_loop=in_loop,
-                            visited_methods=visited_methods | {call_name},
-                        )
-
-    # default recurses. Just recurses over all children.
-    cur_states = states
-    for child in node.named_children:
-        cur_states = execute_node_paths(
-            child, smith_var, class_methods, cur_states, in_loop, visited_methods
-        )
-    return cur_states
+        case _:
+            cur_states = states
+            for child in node.named_children:
+                cur_states = execute_node_paths(
+                    child, smith_var_name, class_methods, cur_states, visited_methods
+                )
+            return cur_states
 
 
 def get_bitstring_paths(
@@ -319,8 +289,8 @@ def get_bitstring_paths(
     method_node: tree_sitter.Node,
 ) -> list[list[BitField]]:
     """Extracts the list of BitFields for each explored control-flow path."""
-    smith_var = find_smith_parameter(method_node)
-    if not smith_var:
+    smith_var_name = find_smith_parameter(method_node)
+    if not smith_var_name:
         return []
 
     body = method_node.child_by_field_name("body")
@@ -328,10 +298,10 @@ def get_bitstring_paths(
         return []
 
     class_methods = get_class_methods(class_node)
-    initial_states = [PathState(current_bit=0, fields=())]
-    final_states = execute_node_paths(body, smith_var, class_methods, initial_states)
+    initial_states = [PathState(bit_cursor=0, bitfields=())]
+    final_states = execute_node_paths(body, smith_var_name, class_methods, initial_states)
 
-    return [list(st.fields) for st in final_states]
+    return [list(state.bitfields) for state in final_states]
 
 
 def get_bitstring_fields(

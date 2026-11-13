@@ -83,5 +83,5 @@ if __name__ == "__main__":
         print(f"=== {name} ===")
         print(f"Structure: {tuples}")
         for f in fields:
-            print(f"  {f.field_type}: bits [{f.start_index}..{f.end_index}] (bits={f.bits}, call='{f.source_call}')")
+            print(f"  {f.field_type}: bits [{f.start_index}..{f.end_index}]")
         print()
