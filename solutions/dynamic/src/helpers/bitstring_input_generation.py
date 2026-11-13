@@ -74,8 +74,8 @@ def generate_inputs(
     alternating = ("01" * math.ceil(required_length / 2))[:required_length]
     results.update([all_zeros, all_ones, alternating])
 
-    # Dynamic runway seeds for loops and extended reads
-    for runway_len in (20, 50, 100):
+    # runway to allow loops to populate the dynamic recorded reading structure.
+    for runway_len in (20, 50, 100,250,500,100):
         results.add("0" * runway_len)
         results.add("1" * runway_len)
     for zeros_count in (1, 2, 3, 4, 5, 8, 16):
