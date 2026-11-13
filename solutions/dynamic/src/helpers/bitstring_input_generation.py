@@ -74,6 +74,13 @@ def generate_inputs(
     alternating = ("01" * math.ceil(required_length / 2))[:required_length]
     results.update([all_zeros, all_ones, alternating])
 
+    # Dynamic runway seeds for loops and extended reads
+    for runway_len in (20, 50, 100):
+        results.add("0" * runway_len)
+        results.add("1" * runway_len)
+    for zeros_count in (1, 2, 3, 4, 5, 8, 16):
+        results.add(("0" * zeros_count) + "1" + ("0" * 10))
+
     
     dict_ints: list[int] = []
     if dictionary:

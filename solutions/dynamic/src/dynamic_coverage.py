@@ -74,6 +74,9 @@ def draw_bit(state: jvmc.State, ref: jvmc.StackReference) -> bool | str:
     if index.value >= len(bits.content):
         return "illegal state"
 
+    if hasattr(state, "recorded_reads"):
+        state.recorded_reads.append(("boolean", index.value, index.value))
+
     smith.fields[index_field] = jvmc.StackInt(index.value + 1)
     return bits.content[index.value] != "0"
 
@@ -87,6 +90,10 @@ def draw_int(state: jvmc.State, ref: jvmc.StackReference, count: int) -> int | s
     bits = state.heap[bits_ref].content
     if index + count >= len(bits):
         return "illegal state"
+
+    if hasattr(state, "recorded_reads"):
+        state.recorded_reads.append(("integer", index, index + count - 1))
+
     value = 0
     for bit in bits[index:index + count]:
         value = value * 2 + int(bit)
@@ -621,9 +628,11 @@ def execute_input(
     methodid: jvm.AbsMethodID,
     inp: jpamb.case.Input,
     max_steps: int = 2000,
-) -> tuple[set, str | None]:
-    """Runs a single input through the dynamic interpreter, tracking coverage and behavior."""
+) -> tuple[set, str | None, list[tuple[str, int, int]]]:
+    """Runs a single input through the dynamic interpreter, tracking coverage, behavior, and dynamic reads."""
     state = initial(bc, methodid, inp)
+    recorded_reads: list[tuple[str, int, int]] = []
+    state.recorded_reads = recorded_reads
     seen_states = set()
     run_pcs = set()
     terminal_behavior = None
@@ -640,15 +649,16 @@ def execute_input(
             break
         seen_states.add(snapshot)
 
-    return run_pcs, terminal_behavior
+    return run_pcs, terminal_behavior, recorded_reads
 
 
 def run_initial_seeds(
     bc: jpamb.Bytecode,
     methodid: jvm.AbsMethodID,
     suite: jpamb.Suite,
+    structure: list,
     max_steps: int = 2000,
-) -> tuple[set[str], set, list[jpamb.case.Input], set[jpamb.case.Input]]:
+) -> tuple[set[str], set, list[jpamb.case.Input], set[jpamb.case.Input], list]:
     """runs analysis using given inputs."""
     behaviors: set[str] = set()
     pc_coverage: set = set()
@@ -665,12 +675,16 @@ def run_initial_seeds(
 
     for seed in list(corpus):
         used_corpus.add(seed)
-        run_pcs, behavior = execute_input(bc, methodid, seed, max_steps)
+        run_pcs, behavior, recorded = execute_input(bc, methodid, seed, max_steps)
         pc_coverage.update(run_pcs)
         if behavior:
             behaviors.add(behavior)
+        for field in recorded:
+            if field not in structure:
+                structure.append(field)
 
-    return behaviors, pc_coverage, corpus, used_corpus
+    structure.sort(key=lambda f: (f[1], f[2]))
+    return behaviors, pc_coverage, corpus, used_corpus, structure
 
 
 def fuzz_coverage(
@@ -679,7 +693,7 @@ def fuzz_coverage(
     corpus: list[jpamb.case.Input],
     used_corpus: set[jpamb.case.Input],
     pc_coverage: set,
-    structure,
+    structure: list,
     dictionary,
     budget: int = 200,
     max_steps: int = 2000,
@@ -695,14 +709,17 @@ def fuzz_coverage(
             continue
         used_corpus.add(mutant)
 
-        run_pcs, behavior = execute_input(bc, methodid, mutant, max_steps)
+        run_pcs, behavior, recorded = execute_input(bc, methodid, mutant, max_steps)
         if behavior:
             behaviors.add(behavior)
 
-        
         if run_pcs - pc_coverage:
             pc_coverage.update(run_pcs)
             corpus.append(mutant)
+            for field in recorded:
+                if field not in structure:
+                    structure.append(field)
+            structure.sort(key=lambda f: (f[1], f[2]))
 
         budget -= 1
 
@@ -726,11 +743,11 @@ def analyse():
     BUDGET = 200
 
     dictionary = get_method_dictionary(methodid, suite)
-    structure = get_bitstring_structure(methodid, suite)
+    structure = list(get_bitstring_structure(methodid, suite))
 
     #run on initial inputs from dictionary
-    behaviors, pc_coverage, corpus, used_corpus = run_initial_seeds(
-        bc, methodid, suite, max_steps=MAX_STEPS
+    behaviors, pc_coverage, corpus, used_corpus, structure = run_initial_seeds(
+        bc, methodid, suite, structure, max_steps=MAX_STEPS
     )
 
     #coverage based fuzzing.
