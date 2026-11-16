@@ -1778,7 +1778,19 @@
                     "values": {
                       "value": {
                         "type": "string",
-                        "value": "(r'110000000000000') -> divide by zero"
+                        "value": "(r'01010000000000') -> divide by zero"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'0001') -> ok"
                       }
                     }
                   }
@@ -1964,7 +1976,7 @@
             "type": "int"
           },
           {
-            "index": 1,
+            "index": 2,
             "offset": 43,
             "opr": "store",
             "type": "int"
@@ -1985,35 +1997,35 @@
         ],
         "lines": [
           {
-            "line": 86,
+            "line": 87,
             "offset": 0
           },
           {
-            "line": 88,
+            "line": 89,
             "offset": 2
           },
           {
-            "line": 91,
+            "line": 92,
             "offset": 6
           },
           {
-            "line": 89,
+            "line": 90,
             "offset": 7
           },
           {
-            "line": 90,
+            "line": 91,
             "offset": 8
           },
           {
-            "line": 93,
+            "line": 94,
             "offset": 14
           },
           {
-            "line": 94,
+            "line": 95,
             "offset": 17
           },
           {
-            "line": 96,
+            "line": 97,
             "offset": 23
           }
         ],
@@ -2424,43 +2436,43 @@
         ],
         "lines": [
           {
-            "line": 103,
+            "line": 104,
             "offset": 0
           },
           {
-            "line": 105,
+            "line": 106,
             "offset": 2
           },
           {
-            "line": 108,
+            "line": 109,
             "offset": 6
           },
           {
-            "line": 106,
+            "line": 107,
             "offset": 7
           },
           {
-            "line": 107,
+            "line": 108,
             "offset": 8
           },
           {
-            "line": 109,
+            "line": 110,
             "offset": 14
           },
           {
-            "line": 110,
+            "line": 111,
             "offset": 17
           },
           {
-            "line": 112,
+            "line": 113,
             "offset": 23
           },
           {
-            "line": 113,
+            "line": 114,
             "offset": 26
           },
           {
-            "line": 114,
+            "line": 115,
             "offset": 34
           }
         ],
