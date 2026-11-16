@@ -2,9 +2,9 @@ import heapq
 import sys
 from collections import deque
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from dataclasses import astuple
-from abstractions import Interval
+from abstractions import AbstractSmith, BitPattern, Drawn, Interval
 from java_literals import convert_literals, get_literals_in_method
 
 import jpamb
@@ -161,6 +161,47 @@ class State(sexpr.AsSExpr):
         new_store = tuple((s, v) for s, v in self.store if s in active_ids)
         return State(self.locals, self.stack, new_store, self.next_id)
 
+SMITH = jvm.Object(jvm.ClassName("jpamb.utils.Smith"))
+
+
+def set_smith(state: State, smith: AbstractSmith) -> State:
+    """Update every reference to the same Smith object (same tag) in the store."""
+    new_store = tuple(
+        (s, smith if isinstance(v, AbstractSmith) and v.tag == smith.tag else v)
+        for s, v in state.store
+    )
+    return State(state.locals, state.stack, new_store, state.next_id)
+
+
+def smiths(state: State) -> dict[int, AbstractSmith]:
+    return {v.tag: v for _, v in state.store if isinstance(v, AbstractSmith)}
+
+
+def refine(state: State, sym_id: int, new_val: Interval) -> State:
+    """Narrow a value on a branch. If the value came from a Smith draw, push
+    the narrowed range back into the bits of that Smith."""
+    old = state.get_val(sym_id)
+    if isinstance(old, Drawn):
+        new_val = Drawn(new_val.min, new_val.max, old.tag, old.start, old.width)
+        smith = smiths(state).get(old.tag)
+        if smith is not None:
+            pattern = smith.pattern.with_slice(old.start, old.width, new_val)
+            state = set_smith(state, replace(smith, pattern=pattern))
+    return state.update_val(sym_id, new_val)
+
+
+def throw_illegal_state(bc: jpamb.Bytecode, pc: PC, state: State):
+    """Jump to the catch block for IllegalStateException (Smith ran out of bits),
+    like the dynamic interpreter does; otherwise the exception escapes."""
+    method = bc.suite.findmethod(pc.method, eff=bc.eff)
+    for catch in method["code"].get("exceptions", []):
+        if catch["catchType"] == "java/lang/IllegalStateException" and catch["start"] <= pc.offset < catch["end"]:
+            exc_id, st = state.create_val(Interval(1, None))
+            yield (PC(pc.method, catch["handler"]), State(st.locals, (exc_id,), st.store, st.next_id))
+            return
+    yield ("illegal state", state)
+
+
 def manystep(
     bc: jpamb.Bytecode,
     pc: PC,
@@ -183,11 +224,11 @@ def manystep(
             false_val = narrow_ifz(val, op, False)
 
             if not true_val.is_bot: #yield true branch if not bottom
-                out_t = after.update_val(sym_id, true_val)
+                out_t = refine(after, sym_id, true_val)
                 yield (pc % target, out_t)
                 
             if not false_val.is_bot: # yield false branch if not bottom
-                out_f = after.update_val(sym_id, false_val)
+                out_f = refine(after, sym_id, false_val)
                 yield (pc + 1, out_f)
         case jvm.NewArray(type=t, dim=dim):
             [size_id], after = state.pop_ids(1)
@@ -269,6 +310,10 @@ def manystep(
                 callee_locals[i] = sym_id
             callee_state = State(tuple(callee_locals), (), callee_state.store, callee_state.next_id)
             yield (PC(method_id, 0), callee_state) 
+            for a in args_ids:  # the callee may draw: the cursor can only move forward
+                v = after.get_val(a)
+                if isinstance(v, AbstractSmith):
+                    after = set_smith(after, replace(v, cursor=Interval(v.cursor.min, None)))
             ret_type = method_id.extension.return_type
             match ret_type:
                 case None: next_state = after
@@ -279,6 +324,25 @@ def manystep(
                     sym_id, next_state = after.create_val(Interval.top())
                     next_state = next_state.push_id(sym_id)
             yield (pc + 1, next_state)
+        case jvm.InvokeInterface(method=m) if m.extension.name == "draw":
+            n_args = len(m.extension.params)
+            ids, after = state.pop_ids(n_args + 1)
+            smith = after.get_val(ids[0])
+            assert isinstance(smith, AbstractSmith), f"expected a Smith but got {smith}"
+            count = 1
+            if n_args:
+                c = after.get_val(ids[1])
+                # ponytail: draw(n) needs a constant n; join the draws over the range if that changes
+                if c.min is None or c.min != c.max:
+                    raise NotImplementedError(f"draw(n) with non-constant n={c}")
+                count = c.min
+            success, exhausted = smith.draw(count)
+            if success is not None:
+                value, smith_after = success
+                sym_id, st = set_smith(after, smith_after).create_val(value)
+                yield (pc + 1, st.push_id(sym_id))
+            if exhausted is not None:
+                yield from throw_illegal_state(bc, pc, set_smith(after, exhausted))
         case jvm.Load(index=i):
             sym_id = state.read_local(i)
             yield (pc + 1, state.push_id(sym_id))
@@ -306,18 +370,20 @@ def manystep(
             f_v1, f_v2 = refine_if_bounds(v1, v2, op, is_true=False)
 
             if not t_v1.is_bot and not t_v2.is_bot:
-                out_t = after.update_val(id1, t_v1).update_val(id2, t_v2)
+                out_t = refine(refine(after, id1, t_v1), id2, t_v2)
                 yield (pc % target, out_t)
                 
             if not f_v1.is_bot and not f_v2.is_bot:
-                out_f = after.update_val(id1, f_v1).update_val(id2, f_v2)
+                out_f = refine(refine(after, id1, f_v1), id2, f_v2)
                 yield (pc + 1, out_f)
         case jvm.Binary(operant=op):
             [id1, id2], after = state.pop_ids(2)
             v1, v2 = after.get_val(id1), after.get_val(id2)
             
             res, errors = Interval.arithmetic(v1, v2, op)
-            for err in errors: yield err
+            for err in errors:
+                # on the error path the divisor is 0; this can pin down Smith bits
+                yield (err, refine(after, id2, Interval(0, 0))) if err == "divide by zero" else err
             
             if not res.is_bot:
                 sym_id, after = after.create_val(res)
@@ -360,7 +426,8 @@ def initialstate(
 
     if inputs is None:
         for i, p in enumerate(methodid.extension.params):
-            sym_id, state = state.create_val(Interval.top())
+            top = AbstractSmith(i, BitPattern.top(), Interval(0, 0)) if p == SMITH else Interval.top()
+            sym_id, state = state.create_val(top)
             locals[i] = sym_id
        
     else:
@@ -368,6 +435,10 @@ def initialstate(
             match x:
                 case jpamb.case.Boolean(value=value)| jpamb.case.Int(value=value):
                     sym_id, state = state.create_val(Interval.abstract([StackInt(int(value))]))
+                    locals[i] = sym_id
+                case jpamb.case.Smith(value=bits):
+                    smith = AbstractSmith(i, BitPattern.abstract([bits]), Interval(0, 0))
+                    sym_id, state = state.create_val(smith)
                     locals[i] = sym_id
                 case jpamb.case.Array() | jpamb.case.String():
                     sym_id, state = state.create_val(Interval(min=0,max=None))
@@ -388,6 +459,8 @@ class AbstractInterpreter:
     worklist: list[PC]
     states: dict[PC, State]
     k_set: list[int]
+    # (outcome, smith tag) -> join of the Smith bit patterns in the states that reach the outcome
+    preconditions: dict[tuple[str, int], BitPattern] = field(default_factory=dict)
 
     @staticmethod
     def initial(bc: jpamb.Bytecode, methodid: jvm.AbsMethodID, inputs):
@@ -409,7 +482,13 @@ class AbstractInterpreter:
 
         for res in manystep(self.bc, pc, self.states[pc]):
             if isinstance(res, str):
-                finals.add(res)
+                res = (res, self.states[pc])
+            if isinstance(res[0], str):
+                outcome, st = res
+                finals.add(outcome)
+                for tag, smith in smiths(st).items():
+                    key = (outcome, tag)
+                    self.preconditions[key] = self.preconditions.get(key, BitPattern.bot()) | smith.pattern
             else:
                 pc_, st = res
 
@@ -556,6 +635,15 @@ def interpret():
         steps -= 1
     if not all_finals: # 
         jpamb.emit_step(x, last_pc, "*", depth=1)
+    report_preconditions(ai)
+
+
+def report_preconditions(ai: AbstractInterpreter):
+    """For each outcome, print which Smith bitstrings may reach it and one
+    candidate witness. gamma(pattern) over-approximates the inputs reaching
+    the outcome, so the witness is a candidate, not a guarantee."""
+    for (outcome, tag), pattern in sorted(ai.preconditions.items()):
+        print(f"precondition {outcome!r}: smith{tag} in {pattern}, witness r'{pattern.witness()}'", file=sys.stderr)
 
 def analyse():
     """The static analysis"""
@@ -580,6 +668,7 @@ def analyse():
         _pc, finals = ai.step()
         final |= finals
         steps -= 1
+    report_preconditions(ai)
     is_incomplete = len(ai.worklist) > 0 or "ok" not in final
     
     for f in jpamb.QUERIES:

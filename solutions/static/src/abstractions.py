@@ -699,3 +699,250 @@ class Interval(Abstraction, Lattice):
         return Interval(min=new_min, max=new_max)
 
     
+
+# ---------------------------------------------------------------------------
+# Smith / bit-vector abstraction
+#
+# Concrete domain: sets of bitstrings, i.e. the inputs a Smith may wrap.
+# Abstract domain: BitPattern = one trit per position (0, 1 or None = unknown)
+# plus an Interval over the length of the bitstring.
+#
+#   alpha(S) = (bits on which every long-enough string of S agrees, hull of the lengths)
+#   gamma(p) = { s | len(s) in p.length and s[i] == p.bits[i]
+#                    for every known p.bits[i] with i < len(s) }
+#
+# Positions past len(bits) are unknown. Positions at or past length.max exist
+# in no string of gamma(p); they carry no information, so bits are cut there
+# (with trailing unknowns stripped) to give one representation per value.
+# ---------------------------------------------------------------------------
+
+type Trit = Literal[0, 1] | None
+
+
+def _interval_le(a: Interval, b: Interval) -> bool:
+    """Interval inclusion a ⊑ b."""
+    if a.is_bot:
+        return True
+    if b.is_bot:
+        return False
+    lo = b.min is None or (a.min is not None and a.min >= b.min)
+    hi = b.max is None or (a.max is not None and a.max <= b.max)
+    return lo and hi
+
+
+@dataclass(frozen=True)
+class BitPattern(Abstraction, Lattice):
+    bits: tuple[Trit, ...]
+    length: Interval
+
+    def __post_init__(self):
+        length = Interval(1, 0) if self.length.is_bot else self.length
+        bits = () if length.is_bot else tuple(self.bits[: length.max])
+        while bits and bits[-1] is None:
+            bits = bits[:-1]
+        object.__setattr__(self, "bits", bits)
+        object.__setattr__(self, "length", length)
+
+    def __str__(self):
+        if self.is_bot:
+            return "⊥"
+        tail = "" if self.length.max == len(self.bits) else "?*"
+        return "".join("?" if b is None else str(b) for b in self.bits) + f"{tail} len {self.length}"
+
+    def __sexpr__(self):
+        return str(self)
+
+    @property
+    def is_bot(self) -> bool:
+        return self.length.is_bot
+
+    def bit(self, i: int) -> Trit:
+        return self.bits[i] if i < len(self.bits) else None
+
+    def _exists(self, i: int) -> bool:
+        """Can position i exist in some string of gamma(self)?"""
+        return not self.is_bot and (self.length.max is None or i < self.length.max)
+
+    @classmethod
+    def top(cls) -> Self:
+        return cls((), Interval(0, None))
+
+    @classmethod
+    def bot(cls) -> Self:
+        return cls((), Interval(1, 0))
+
+    @classmethod
+    def abstract(cls, values: Iterable[str]) -> Self:
+        values = list(values)
+        if not values:
+            return cls.bot()
+        n = max(map(len, values))
+        bits = []
+        for i in range(n):
+            seen = {int(s[i]) for s in values if i < len(s)}
+            bits.append(seen.pop() if len(seen) == 1 else None)
+        return cls(tuple(bits), Interval(min(map(len, values)), n))
+
+    def __contains__(self, value: str) -> bool:
+        return len(value) in self.length and all(
+            b is None or int(value[i]) == b
+            for i, b in enumerate(self.bits)
+            if i < len(value)
+        )
+
+    def _le(self, other: "BitPattern") -> bool:
+        if not _interval_le(self.length, other.length):
+            return False
+        return all(
+            b is None or not self._exists(i) or self.bit(i) == b
+            for i, b in enumerate(other.bits)
+        )
+
+    def __eq__(self, other: "BitPattern") -> bool:
+        return self.bits == other.bits and self.length == other.length
+
+    def __lt__(self, other: "BitPattern") -> bool:
+        return self._le(other) and self != other
+
+    def __gt__(self, other: "BitPattern") -> bool:
+        return other < self
+
+    def __or__(self, other: "BitPattern") -> "BitPattern":
+        if self.is_bot:
+            return other
+        if other.is_bot:
+            return self
+        bits = []
+        for i in range(max(len(self.bits), len(other.bits))):
+            if not self._exists(i):  # absent position acts as ⊥
+                bits.append(other.bit(i))
+            elif not other._exists(i):
+                bits.append(self.bit(i))
+            else:
+                a, b = self.bit(i), other.bit(i)
+                bits.append(a if a == b else None)
+        return BitPattern(tuple(bits), self.length | other.length)
+
+    def __and__(self, other: "BitPattern") -> "BitPattern":
+        length = self.length & other.length
+        bits = []
+        for i in range(max(len(self.bits), len(other.bits))):
+            a, b = self.bit(i), other.bit(i)
+            if a is not None and b is not None and a != b:
+                # No string can have position i: they all end before it.
+                length = length & Interval(None, i)
+                break
+            bits.append(a if a is not None else b)
+        return BitPattern(tuple(bits), length)
+
+    def widen(self, other: "BitPattern", K: list[int]) -> "BitPattern":
+        # Trits have finite height; only the length can grow forever.
+        if self.is_bot:
+            return other
+        if other.is_bot:
+            return self
+        return BitPattern((self | other).bits, self.length.widen(other.length, K))
+
+    def read(self, start: int, width: int) -> Interval:
+        """Unsigned value range of bits [start, start + width), MSB first."""
+        lo = hi = 0
+        for i in range(start, start + width):
+            b = self.bit(i)
+            lo = lo * 2 + (0 if b is None else b)
+            hi = hi * 2 + (1 if b is None else b)
+        return Interval(lo, hi)
+
+    def with_slice(self, start: int, width: int, value: Interval) -> "BitPattern":
+        """Meet with the bits shared by every unsigned value of `value` in [start, start + width)."""
+        if value.is_bot:
+            return BitPattern.bot()
+        if width >= 32:  # ponytail: signed 32-bit draws give no bit facts; split the range per sign if needed
+            return self
+        lo = max(value.min if value.min is not None else 0, 0)
+        hi = min(value.max if value.max is not None else 2**width - 1, 2**width - 1)
+        if lo > hi:
+            return BitPattern.bot()
+        bits: list[Trit] = [None] * start
+        for shift in reversed(range(width)):
+            if lo >> shift != hi >> shift:
+                break
+            bits.append((lo >> shift) & 1)
+        return self & BitPattern(tuple(bits), Interval(0, None))
+
+    def witness(self) -> str | None:
+        """One concrete (shortest) bitstring in gamma(self); unknown bits become 0."""
+        if self.is_bot:
+            return None
+        return "".join(str(self.bit(i) or 0) for i in range(self.length.min))
+
+
+@dataclass(frozen=True, eq=False)
+class Drawn(Interval):
+    """An Interval produced directly by a Smith draw. It remembers which bits
+    produced it, so branch conditions on the value can refine those bits."""
+
+    tag: int = 0
+    start: int = 0
+    width: int = 0
+
+
+@dataclass(frozen=True)
+class AbstractSmith:
+    """Abstract Smith object: the bitstrings it may wrap and where its cursor
+    may be. `tag` names the concrete Smith object (its parameter slot), so
+    aliases and joined states agree on which object is meant."""
+
+    tag: int
+    pattern: BitPattern
+    cursor: Interval
+    is_bot = False  # lets Interval.__or__ treat it as a non-bottom value
+
+    def __str__(self):
+        return f"smith{self.tag}<{self.pattern} @ {self.cursor}>"
+
+    def __sexpr__(self):
+        return str(self)
+
+    def __or__(self, other):
+        if isinstance(other, Interval) and other.is_bot:
+            return self
+        assert isinstance(other, AbstractSmith) and other.tag == self.tag, f"cannot join {self} with {other}"
+        return AbstractSmith(self.tag, self.pattern | other.pattern, self.cursor | other.cursor)
+
+    def widen(self, other, K: list[int]) -> "AbstractSmith":
+        if isinstance(other, Interval) and other.is_bot:
+            return self
+        return AbstractSmith(self.tag, self.pattern.widen(other.pattern, K), self.cursor.widen(other.cursor, K))
+
+    def draw(self, count: int) -> tuple[tuple[Interval, "AbstractSmith"] | None, "AbstractSmith | None"]:
+        """Abstract Smith.draw(count) (count bits as an int; draw() is count=1).
+
+        Returns (success, exhausted):
+          success   = (value, smith after the draw), or None if the draw must fail
+          exhausted = smith on the IllegalStateException path, or None if it cannot happen
+        """
+        success = None
+        enough = self.pattern & BitPattern((), Interval(self.cursor.min + count, None))
+        if not enough.is_bot:
+            c = self.cursor.min
+            if c == self.cursor.max:
+                value = enough.read(c, count)
+                if count == 32:  # reinterpret as a signed Java int
+                    if value.min >= 2**31:
+                        value = Interval(value.min - 2**32, value.max - 2**32)
+                    elif value.max >= 2**31:
+                        value = Interval.top()
+                if count < 32:
+                    value = Drawn(value.min, value.max, self.tag, c, count)
+            else:
+                value = Interval(0, 2**count - 1) if count < 32 else Interval.top()
+            success = (value, AbstractSmith(self.tag, enough, self.cursor + Interval(count, count)))
+
+        exhausted = None
+        if self.cursor.max is None:
+            exhausted = self
+        else:
+            short = self.pattern & BitPattern((), Interval(0, self.cursor.max + count - 1))
+            if not short.is_bot:
+                exhausted = AbstractSmith(self.tag, short, self.cursor)
+        return success, exhausted
