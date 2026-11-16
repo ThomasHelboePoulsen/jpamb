@@ -95,5 +95,25 @@ public class Randomness {
             int quotient = 1 / smith.draw(10);
         }
     }
+
+    @Case("(r'00001') -> ok")
+    @Case("(r'00000') -> assertion error")
+    @Case("(r'110001010111011') -> ok")
+    @Case("(r'110000000000000') -> divide by zero")
+    public static void branchOverlap(Smith smith) {
+        int value = 0;
+        try {
+            value = smith.draw(4);
+        } catch (IllegalStateException e) {
+            assert false;
+        }
+        if (value >= 5) {
+            value = 1 / smith.draw(10);
+        }
+        boolean tail = smith.draw();
+        assert tail;
+    }
+
+    
     
 }
