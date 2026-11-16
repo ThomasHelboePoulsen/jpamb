@@ -228,11 +228,11 @@ def explore_method_invocation(
     obj_name = obj.text.decode("utf-8") if obj else None
     call_name = name.text.decode("utf-8") if name else None
 
-    # 1. Direct smith.draw() call
+    
     if obj_name == smith_var_name and call_name == "draw":
         return explore_smith_draw(args, states)
 
-    # 2. Smith passed to an internal helper method
+   
     if (obj is None or obj_name == "this") and call_name in class_methods:
         callee_result = explore_callee_invocation(
             call_name, args, smith_var_name, class_methods, states, visited_methods
@@ -240,7 +240,7 @@ def explore_method_invocation(
         if callee_result is not None:
             return callee_result
 
-    # 3. Default: recurse into children
+   
     cur_states = states
     for child in node.named_children:
         cur_states = execute_node_paths(
