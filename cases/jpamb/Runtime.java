@@ -21,7 +21,8 @@ public class Runtime {
           jpamb.cases.Strings.class,
           Dependent.class,
           Calls.class,
-          jpamb.cases.Randomness.class);
+          jpamb.cases.Randomness.class,
+          jpamb.cases.BitOperations.class);
 
   public static Case[] cases(Method m) {
     var cases = m.getAnnotation(Cases.class);
