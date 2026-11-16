@@ -53,8 +53,8 @@ def character_candidates(literals):
 def repeated_arrays(element_type, values):
     arrays = []
     for value in values:
-        arrays.append(jpamb.case.Array(element_type, [value]))
-        arrays.append(jpamb.case.Array(element_type, [value, value, value]))
+        arrays.append(jpamb.case.Array(element_type, (value,)))
+        arrays.append(jpamb.case.Array(element_type, (value, value, value)))
     return arrays
 
 
@@ -63,7 +63,7 @@ def random_arrays(element_type, values):
     for _ in range(5):
         length = random.randint(2, 10)
         contents = random.choices(values, k=length)
-        arrays.append(jpamb.case.Array(element_type, contents))
+        arrays.append(jpamb.case.Array(element_type, tuple(contents)))
     return arrays
 
 
@@ -73,13 +73,13 @@ def literal_character_arrays(raw_literals):
     converted = convert_literals({"character_literal": raw_characters})
     characters = converted.get(str, [])
     if characters:
-        arrays.append(jpamb.case.Array(jvm.Char(), characters))
-        arrays.append(jpamb.case.Array(jvm.Char(), list(reversed(characters))))
+        arrays.append(jpamb.case.Array(jvm.Char(), tuple(characters)))
+        arrays.append(jpamb.case.Array(jvm.Char(), tuple(reversed(characters))))
 
     raw_strings = raw_literals.get("string_literal", [])
     converted = convert_literals({"string_literal": raw_strings})
     for text in converted.get(str, []):
-        arrays.append(jpamb.case.Array(jvm.Char(), list(text)))
+        arrays.append(jpamb.case.Array(jvm.Char(), tuple(text)))
     return arrays
 
 
@@ -94,7 +94,7 @@ def array_candidates(element_type, literals, raw_literals):
         case _:
             raise NotImplementedError(f"No array candidates for {element_type}")
 
-    arrays = [jpamb.case.Array(element_type, [])]
+    arrays = [jpamb.case.Array(element_type, ())]
     if element_type == jvm.Char():
         arrays.extend(literal_character_arrays(raw_literals))
     arrays.extend(repeated_arrays(element_type, values))
@@ -128,7 +128,7 @@ def generate_inputs_from_dict(methodid, suite, max_combinations=2000):
     for count, combination in enumerate(itertools.product(*pools)):
         if count >= max_combinations:
             break
-        yield jpamb.case.Input(list(combination))
+        yield jpamb.case.Input(tuple(combination))
 
 
 def convert_literals(raw_literals: dict[str, list[bytes]]) -> dict[type, list]:

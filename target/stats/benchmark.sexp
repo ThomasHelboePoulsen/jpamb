@@ -143,6 +143,118 @@
     )
     :results ("assertion error")
   )
+  :"jpamb.cases.BitOperations.bitshiftLeft!(1)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitshiftLeft:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.BitOperations.bitshiftLeft!(4)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitshiftLeft:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 13)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.BitOperations.bitshiftRight!(10000)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitshiftRight:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.BitOperations.bitshiftRight!(128)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitshiftRight:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 13)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.BitOperations.bitshiftUnsignedRight!(-1)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitshiftUnsignedRight:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.BitOperations.bitshiftUnsignedRight!(128)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitshiftUnsignedRight:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 13)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.BitOperations.bitwiseAnd!(10000, 4)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitwiseAnd:(II)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.BitOperations.bitwiseAnd!(128, 128)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitwiseAnd:(II)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 12)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.BitOperations.bitwiseNot!(10000)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitwiseNot:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.BitOperations.bitwiseNot!(128)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitwiseNot:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 13)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.BitOperations.bitwiseOr!(10000, 2)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitwiseOr:(II)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.BitOperations.bitwiseOr!(128, 3)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitwiseOr:(II)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 13)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.BitOperations.xor!(10, 10)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.xor:(II)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.BitOperations.xor!(4, 0)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.xor:(II)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 12)
+      )
+    )
+    :results (ok)
+  )
   :"jpamb.cases.Calls.allPrimesArePositive!(-1)V" (control
     :coverage (
       :"jpamb.cases.Calls.allPrimesArePositive:(I)V" (coverage
@@ -342,47 +454,7 @@
     )
     :results ("assertion error")
   )
-  :"jpamb.cases.Randomness.branchOverlap!(r'00000')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 14 15 16 23 24 25 26 27 28 29 30)
-      )
-    )
-    :results ("assertion error")
-  )
-  :"jpamb.cases.Randomness.branchOverlap!(r'00001')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 14 15 16 23 24 25 26 27 28 29 34)
-      )
-    )
-    :results (ok)
-  )
-  :"jpamb.cases.Randomness.branchOverlap!(r'110000000000000')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 14 15 16 17 18 19 20 21)
-      )
-    )
-    :results ("divide by zero")
-  )
-  :"jpamb.cases.Randomness.branchOverlap!(r'110001010111011')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 34)
-      )
-    )
-    :results (ok)
-  )
-  :"jpamb.cases.Randomness.drawDependsOnArg!(0, r'0')I" (control
-    :coverage (
-      :"jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I" (coverage
-        :reachable (0 1 2 7 8)
-      )
-    )
-    :results (ok)
-  )
-  :"jpamb.cases.Randomness.drawDependsOnArg!(0, r'1')I" (control
+  :"jpamb.cases.Randomness.drawDependsOnArg!(0, r'jpamb.utils.BitSmith@23ab930d')I" (control
     :coverage (
       :"jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I" (coverage
         :reachable (0 1 2 3 4 5)
@@ -390,7 +462,15 @@
     )
     :results ("divide by zero")
   )
-  :"jpamb.cases.Randomness.drawDependsOnArg!(2, r'1')I" (control
+  :"jpamb.cases.Randomness.drawDependsOnArg!(0, r'jpamb.utils.BitSmith@4534b60d')I" (control
+    :coverage (
+      :"jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I" (coverage
+        :reachable (0 1 2 3 4 5)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.Randomness.drawDependsOnArg!(2, r'jpamb.utils.BitSmith@3fa77460')I" (control
     :coverage (
       :"jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I" (coverage
         :reachable (0 1 2 3 4 5 6 8)
@@ -398,10 +478,10 @@
     )
     :results (ok)
   )
-  :"jpamb.cases.Randomness.drawInCallee!(r'0')V" (control
+  :"jpamb.cases.Randomness.drawInCallee!(r'jpamb.utils.BitSmith@3d71d552')V" (control
     :coverage (
       :"jpamb.cases.Randomness.drawInCallee:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5)
+        :reachable (0 1 2 3 4 9)
       )
       :"jpamb.cases.Randomness.heads:(Ljpamb/utils/Smith;)Z" (coverage
         :reachable (0 1 2)
@@ -409,7 +489,7 @@
     )
     :results ("assertion error")
   )
-  :"jpamb.cases.Randomness.drawInCallee!(r'1')V" (control
+  :"jpamb.cases.Randomness.drawInCallee!(r'jpamb.utils.BitSmith@6477463f')V" (control
     :coverage (
       :"jpamb.cases.Randomness.drawInCallee:(Ljpamb/utils/Smith;)V" (coverage
         :reachable (0 1 2 3 4 9)
@@ -420,63 +500,7 @@
     )
     :results (ok)
   )
-  :"jpamb.cases.Randomness.drawInt!(r'000010000000001')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 14 15 16 23)
-      )
-    )
-    :results (ok)
-  )
-  :"jpamb.cases.Randomness.drawInt!(r'0001')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 7 8 9 10)
-      )
-    )
-    :results (ok)
-  )
-  :"jpamb.cases.Randomness.drawInt!(r'01010000000000')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 14 15 16 17 18 19 20)
-      )
-    )
-    :results ("divide by zero")
-  )
-  :"jpamb.cases.Randomness.drawInt!(r'1')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 7 8 9 10)
-      )
-    )
-    :results ("assertion error")
-  )
-  :"jpamb.cases.Randomness.drawInt!(r'1100010101110101011101010')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 14 15 16 17 18 19 20 21 22 23)
-      )
-    )
-    :results (ok)
-  )
-  :"jpamb.cases.Randomness.loopUntilHeads!(r'00001')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12)
-      )
-    )
-    :results ("assertion error")
-  )
-  :"jpamb.cases.Randomness.loopUntilHeads!(r'0001')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 16)
-      )
-    )
-    :results (ok)
-  )
-  :"jpamb.cases.Randomness.loopUntilHeads!(r'1')V" (control
+  :"jpamb.cases.Randomness.loopUntilHeads!(r'jpamb.utils.BitSmith@1ed6993a')V" (control
     :coverage (
       :"jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V" (coverage
         :reachable (0 1 2 3 4 7 8 9 10 11 16)
@@ -484,15 +508,31 @@
     )
     :results (ok)
   )
-  :"jpamb.cases.Randomness.randomBranch!(r'01010101')V" (control
+  :"jpamb.cases.Randomness.loopUntilHeads!(r'jpamb.utils.BitSmith@619a5dff')V" (control
     :coverage (
-      :"jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 4 5 6)
+      :"jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 7 8 9 10 11 16)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.Randomness.loopUntilHeads!(r'jpamb.utils.BitSmith@7e32c033')V" (control
+    :coverage (
+      :"jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 7 8 9 10 11 16)
       )
     )
     :results ("assertion error")
   )
-  :"jpamb.cases.Randomness.randomBranch!(r'100000')V" (control
+  :"jpamb.cases.Randomness.randomBranch!(r'jpamb.utils.BitSmith@2d38eb89')V" (control
+    :coverage (
+      :"jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 10)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.Randomness.randomBranch!(r'jpamb.utils.BitSmith@5fa7e7ff')V" (control
     :coverage (
       :"jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V" (coverage
         :reachable (0 1 2 3 10)
@@ -500,15 +540,15 @@
     )
     :results (ok)
   )
-  :"jpamb.cases.Randomness.randomIndex!(r'0')V" (control
+  :"jpamb.cases.Randomness.randomIndex!(r'jpamb.utils.BitSmith@63c12fb0')V" (control
     :coverage (
       :"jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 8 9 10 11 12 13 14)
+        :reachable (0 1 2 3 4 5 6 7 9 10 11 12 13)
       )
     )
     :results (ok)
   )
-  :"jpamb.cases.Randomness.randomIndex!(r'1')V" (control
+  :"jpamb.cases.Randomness.randomIndex!(r'jpamb.utils.BitSmith@b1a58a3')V" (control
     :coverage (
       :"jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V" (coverage
         :reachable (0 1 2 3 4 5 6 7 9 10 11 12 13)
@@ -516,15 +556,7 @@
     )
     :results ("out of bounds")
   )
-  :"jpamb.cases.Randomness.randomNull!(r'0')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 6 7 8 9 10 11)
-      )
-    )
-    :results ("null pointer")
-  )
-  :"jpamb.cases.Randomness.randomNull!(r'1')V" (control
+  :"jpamb.cases.Randomness.randomNull!(r'jpamb.utils.BitSmith@6438a396')V" (control
     :coverage (
       :"jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V" (coverage
         :reachable (0 1 2 3 4 5 7 8 9 10 11 12)
@@ -532,15 +564,23 @@
     )
     :results (ok)
   )
-  :"jpamb.cases.Randomness.spinOnTails!(r'0')V" (control
+  :"jpamb.cases.Randomness.randomNull!(r'jpamb.utils.BitSmith@e2144e4')V" (control
+    :coverage (
+      :"jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 7 8 9 10 11 12)
+      )
+    )
+    :results ("null pointer")
+  )
+  :"jpamb.cases.Randomness.spinOnTails!(r'jpamb.utils.BitSmith@497470ed')V" (control
     :coverage (
       :"jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3)
+        :reachable (0 1 2 4)
       )
     )
     :results (*)
   )
-  :"jpamb.cases.Randomness.spinOnTails!(r'1')V" (control
+  :"jpamb.cases.Randomness.spinOnTails!(r'jpamb.utils.BitSmith@7ab2bfe1')V" (control
     :coverage (
       :"jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V" (coverage
         :reachable (0 1 2 4)
@@ -548,37 +588,37 @@
     )
     :results (ok)
   )
-  :"jpamb.cases.Randomness.twoDraws!(r'00')V" (control
+  :"jpamb.cases.Randomness.twoDraws!(r'jpamb.utils.BitSmith@27f8302d')V" (control
     :coverage (
       :"jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8 9 16)
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12)
       )
     )
     :results (ok)
   )
-  :"jpamb.cases.Randomness.twoDraws!(r'01')V" (control
+  :"jpamb.cases.Randomness.twoDraws!(r'jpamb.utils.BitSmith@2d8e6db6')V" (control
     :coverage (
       :"jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8 9 16)
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12)
       )
     )
     :results (ok)
   )
-  :"jpamb.cases.Randomness.twoDraws!(r'10')V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 16)
-      )
-    )
-    :results (ok)
-  )
-  :"jpamb.cases.Randomness.twoDraws!(r'11')V" (control
+  :"jpamb.cases.Randomness.twoDraws!(r'jpamb.utils.BitSmith@4629104a')V" (control
     :coverage (
       :"jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V" (coverage
         :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12)
       )
     )
     :results ("assertion error")
+  )
+  :"jpamb.cases.Randomness.twoDraws!(r'jpamb.utils.BitSmith@4d76f3f8')V" (control
+    :coverage (
+      :"jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12)
+      )
+    )
+    :results (ok)
   )
   :"jpamb.cases.Simple.assertBoolean!(false)V" (control
     :coverage (
@@ -932,6 +972,62 @@
     )
     :results ("assertion error" ok)
   )
+  :"jpamb.cases.BitOperations.bitshiftLeft:(I)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitshiftLeft:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 13)
+      )
+    )
+    :results ("assertion error" ok)
+  )
+  :"jpamb.cases.BitOperations.bitshiftRight:(I)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitshiftRight:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 13)
+      )
+    )
+    :results ("assertion error" ok)
+  )
+  :"jpamb.cases.BitOperations.bitshiftUnsignedRight:(I)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitshiftUnsignedRight:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 13)
+      )
+    )
+    :results ("assertion error" ok)
+  )
+  :"jpamb.cases.BitOperations.bitwiseAnd:(II)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitwiseAnd:(II)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 12)
+      )
+    )
+    :results ("assertion error" ok)
+  )
+  :"jpamb.cases.BitOperations.bitwiseNot:(I)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitwiseNot:(I)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 13)
+      )
+    )
+    :results ("assertion error" ok)
+  )
+  :"jpamb.cases.BitOperations.bitwiseOr:(II)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.bitwiseOr:(II)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 13)
+      )
+    )
+    :results ("assertion error" ok)
+  )
+  :"jpamb.cases.BitOperations.xor:(II)V" (control
+    :coverage (
+      :"jpamb.cases.BitOperations.xor:(II)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 12)
+      )
+    )
+    :results ("assertion error" ok)
+  )
   :"jpamb.cases.Calls.allPrimesArePositive:(I)V" (control
     :coverage (
       :"jpamb.cases.Calls.allPrimesArePositive:(I)V" (coverage
@@ -1071,18 +1167,10 @@
     )
     :results ("assertion error")
   )
-  :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 34)
-      )
-    )
-    :results ("assertion error" "divide by zero" ok)
-  )
   :"jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I" (control
     :coverage (
       :"jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8)
+        :reachable (0 1 2 3 4 5 6 8)
       )
     )
     :results ("divide by zero" ok)
@@ -1090,7 +1178,7 @@
   :"jpamb.cases.Randomness.drawInCallee:(Ljpamb/utils/Smith;)V" (control
     :coverage (
       :"jpamb.cases.Randomness.drawInCallee:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 9)
+        :reachable (0 1 2 3 4 9)
       )
       :"jpamb.cases.Randomness.heads:(Ljpamb/utils/Smith;)Z" (coverage
         :reachable (0 1 2)
@@ -1098,18 +1186,10 @@
     )
     :results ("assertion error" ok)
   )
-  :"jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V" (control
-    :coverage (
-      :"jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8 9 10 14 15 16 17 18 19 20 21 22 23)
-      )
-    )
-    :results ("assertion error" "divide by zero" ok)
-  )
   :"jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V" (control
     :coverage (
       :"jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12 16)
+        :reachable (0 1 2 3 4 7 8 9 10 11 16)
       )
     )
     :results ("assertion error" ok)
@@ -1117,7 +1197,7 @@
   :"jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V" (control
     :coverage (
       :"jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 10)
+        :reachable (0 1 2 3 10)
       )
     )
     :results ("assertion error" ok)
@@ -1125,7 +1205,7 @@
   :"jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V" (control
     :coverage (
       :"jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12 13 14)
+        :reachable (0 1 2 3 4 5 6 7 9 10 11 12 13)
       )
     )
     :results (ok "out of bounds")
@@ -1133,7 +1213,7 @@
   :"jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V" (control
     :coverage (
       :"jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12)
+        :reachable (0 1 2 3 4 5 7 8 9 10 11 12)
       )
     )
     :results ("null pointer" ok)
@@ -1141,7 +1221,7 @@
   :"jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V" (control
     :coverage (
       :"jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4)
+        :reachable (0 1 2 4)
       )
     )
     :results (* ok)
@@ -1149,7 +1229,7 @@
   :"jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V" (control
     :coverage (
       :"jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V" (coverage
-        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12 16)
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12)
       )
     )
     :results ("assertion error" ok)
