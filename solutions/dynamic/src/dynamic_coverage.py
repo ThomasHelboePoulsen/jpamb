@@ -423,8 +423,62 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
             negv =  binary(jvm.BinaryOpr.Sub,0,v.value)
             frame.stack.push(jvmc.StackInt(negv))
             frame.pc+=1
-
-            
+        case jvm.Bitopr(type = jvm.Int(), operant = op):
+                    match op:
+                        case jvm.BitOpr.Shr:
+                            v2, v1 = frame.stack.pop(), frame.stack.pop()
+                            assert isinstance(v1,jvmc.StackInt)
+                            assert isinstance(v2,jvmc.StackInt)
+                            res = v1.value >> (v2.value & 0b11111)
+                            frame.stack.push(jvmc.StackInt(res))
+                            frame.pc += 1
+                        case jvm.BitOpr.Shl:
+                            v2, v1 = frame.stack.pop(), frame.stack.pop()
+                            assert isinstance(v1,jvmc.StackInt)
+                            assert isinstance(v2,jvmc.StackInt)
+                            res = v1.value << (v2.value & 0b11111)
+                            res &= 0xFFFFFFFF
+                            if res >= 2**31:
+                                res -= 2**32
+                            frame.stack.push(jvmc.StackInt(res))
+                            frame.pc += 1
+                        case jvm.BitOpr.And:
+                            v2, v1 = frame.stack.pop(), frame.stack.pop()
+                            assert isinstance(v1,jvmc.StackInt)
+                            assert isinstance(v2,jvmc.StackInt)
+                            res = v1.value & v2.value
+                            frame.stack.push(jvmc.StackInt(res))
+                            frame.pc += 1
+                        case jvm.BitOpr.Or:
+                            v2, v1 = frame.stack.pop(), frame.stack.pop()
+                            assert isinstance(v1,jvmc.StackInt)
+                            assert isinstance(v2,jvmc.StackInt)
+                            res = v1.value | v2.value
+                            frame.stack.push(jvmc.StackInt(res))
+                            frame.pc += 1
+                        case jvm.BitOpr.Xor:
+                            v2, v1 = frame.stack.pop(), frame.stack.pop()
+                            assert isinstance(v1,jvmc.StackInt)
+                            assert isinstance(v2,jvmc.StackInt)
+                            res = v1.value ^ v2.value
+                            frame.stack.push(jvmc.StackInt(res))
+                            frame.pc += 1
+                        case jvm.BitOpr.Ushr:
+                            v2, v1 = frame.stack.pop(), frame.stack.pop()
+                            assert isinstance(v1,jvmc.StackInt)
+                            assert isinstance(v2,jvmc.StackInt)
+                            # Shift a nonnegative 32-bit pattern so zeros enter on the left.
+                            res = (v1.value & 0xFFFFFFFF) >> (v2.value & 0b11111)
+                            # Java still returns a signed int, including for a shift of zero.
+                            if res >= 2**31:
+                                res -= 2**32
+                            frame.stack.push(jvmc.StackInt(res))
+                            frame.pc += 1
+                        case _:
+                            raise NotImplementedError(opr.help())
+        
+        
+        
         case a:
             raise NotImplementedError(a.help())
 
@@ -523,7 +577,7 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
                 for i in range(rand_length):
                     rand_val = rand.randint(-(1 << 31), 1 << 31)
                     array.append(rand_val)
-                input.append(jpamb.case.Array(jvm.Int(),array))
+                input.append(jpamb.case.Array(jvm.Int(), tuple(array)))
             case jvm.Array(contains=jvm.Char()):
                 rand_upperbound = rand.randint(1, 10000)
                 rand_length = rand.randint(0,rand_upperbound)
@@ -532,7 +586,7 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
                     random_int = rand.randint(32, 126)
                     rand_char = chr(random_int)
                     array.append(rand_char)
-                input.append(jpamb.case.Array(jvm.Char(),array))
+                input.append(jpamb.case.Array(jvm.Char(), tuple(array)))
             case jvm.Object(jvm.ClassName("java.lang.String")):
                 rand_length = rand.randint(0, 10000)
                 random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=rand_length))
@@ -547,7 +601,7 @@ def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Inp
                     f"Don't know how to create random values for {a}"
                 )
 
-    return jpamb.case.Input(input)
+    return jpamb.case.Input(tuple(input))
 
 
 def get_method_dictionary(methodid, suite) -> dict[type, list]:
@@ -666,8 +720,13 @@ def run_initial_seeds(
 
     corpus = []
     for raw_seed in analysis_inputs(methodid, suite):
-        if not isinstance(raw_seed.values, tuple):
-            raw_seed = jpamb.case.Input(tuple(raw_seed.values))
+        norm_values = tuple(
+            jpamb.case.Array(v.contains, tuple(v.values))
+            if isinstance(v, jpamb.case.Array) and not isinstance(v.values, tuple)
+            else v
+            for v in raw_seed.values
+        )
+        raw_seed = jpamb.case.Input(norm_values)
         corpus.append(raw_seed)
 
     if not corpus:
