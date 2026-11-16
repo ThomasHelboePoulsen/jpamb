@@ -698,4 +698,186 @@ class Interval(Abstraction, Lattice):
             
         return Interval(min=new_min, max=new_max)
 
-    
+
+@dataclass(frozen=True)
+class AbstractSmith(Abstraction, Lattice):
+    """Abstract Smith: a set of possible bitstrings plus how many bits are read.
+
+    pattern: one char per position, '0', '1' or '?' (unknown).
+             Positions past the end of the pattern are '?'.
+    length:  possible lengths of the bitstring.
+    cursor:  possible number of bits read so far.
+    """
+
+    pattern: str
+    length: Interval
+    cursor: Interval
+
+    def __post_init__(self):
+        # Keep one representation per value, so == works:
+        # all bottoms look the same, and "01??" is stored as "01".
+        if self.length.is_bot or self.cursor.is_bot:
+            object.__setattr__(self, "pattern", "")
+            object.__setattr__(self, "length", Interval.bot())
+            object.__setattr__(self, "cursor", Interval.bot())
+        else:
+            object.__setattr__(self, "pattern", self.pattern.rstrip("?"))
+
+    def __str__(self):
+        return f"smith({self.pattern or '?'}, len={self.length}, at={self.cursor})"
+
+    def __sexpr__(self):
+        return str(self)
+
+    @property
+    def is_bot(self) -> bool:
+        return self.cursor.is_bot
+
+    def bit(self, k: int) -> str:
+        return self.pattern[k] if k < len(self.pattern) else "?"
+
+    # --- constructors ---
+
+    @classmethod
+    def top(cls) -> Self:
+        return cls("", Interval(0, None), Interval(0, None))
+
+    @classmethod
+    def bot(cls) -> Self:
+        return cls("", Interval.bot(), Interval.bot())
+
+    @classmethod
+    def unknown(cls) -> Self:
+        """Any bitstring, nothing read yet. Start state for analyse()."""
+        return cls("", Interval(0, None), Interval(0, 0))
+
+    @classmethod
+    def from_bits(cls, bits: str) -> Self:
+        """Exactly one bitstring, nothing read yet. Start state for interpret()."""
+        return cls(bits, Interval(len(bits), len(bits)), Interval(0, 0))
+
+    # --- Galois connection: concrete values are (bits, index) pairs ---
+
+    @classmethod
+    def abstract(cls, values: Iterable[tuple[str, int]]) -> Self:
+        result = cls.bot()
+        for bits, index in values:
+            n = len(bits)
+            result = result | cls(bits, Interval(n, n), Interval(index, index))
+        return result
+
+    def __contains__(self, value: tuple[str, int]) -> bool:
+        bits, index = value
+        return (
+            len(bits) in self.length
+            and index in self.cursor
+            and index <= len(bits)
+            and all(p == "?" or k >= len(bits) or bits[k] == p for k, p in enumerate(self.pattern))
+        )
+
+    # --- lattice ---
+
+    def __le__(self, other: "AbstractSmith") -> bool:
+        if self.is_bot:
+            return True
+        if other.is_bot:
+            return False
+        same_bits = all(p == "?" or self.bit(k) == p for k, p in enumerate(other.pattern))
+        return (
+            same_bits
+            and (self.length & other.length) == self.length
+            and (self.cursor & other.cursor) == self.cursor
+        )
+
+    def __lt__(self, other: "AbstractSmith") -> bool:
+        return self <= other and self != other
+
+    def __gt__(self, other: "AbstractSmith") -> bool:
+        return other < self
+
+    def __or__(self, other: "AbstractSmith") -> "AbstractSmith":
+        if self.is_bot:
+            return other
+        if other.is_bot:
+            return self
+        size = max(len(self.pattern), len(other.pattern))
+        pattern = "".join(
+            self.bit(k) if self.bit(k) == other.bit(k) else "?" for k in range(size)
+        )
+        return AbstractSmith(pattern, self.length | other.length, self.cursor | other.cursor)
+
+    def __and__(self, other: "AbstractSmith") -> "AbstractSmith":
+        if self.is_bot or other.is_bot:
+            return AbstractSmith.bot()
+        bits = []
+        for k in range(max(len(self.pattern), len(other.pattern))):
+            a, b = self.bit(k), other.bit(k)
+            if a != "?" and b != "?" and a != b:
+                return AbstractSmith.bot()  # the bitstrings disagree on bit k
+            bits.append(b if a == "?" else a)
+        return AbstractSmith("".join(bits), self.length & other.length, self.cursor & other.cursor)
+
+    def widen(self, other: "AbstractSmith", K: list[int]) -> "AbstractSmith":
+        if self.is_bot:
+            return other
+        if other.is_bot:
+            return self
+        # The pattern never grows, so only the intervals need widening.
+        return AbstractSmith(
+            (self | other).pattern,
+            self.length.widen(other.length, K),
+            self.cursor.widen(other.cursor, K),
+        )
+
+    # --- the abstract draw ---
+
+    def draw(self, n: int) -> tuple[tuple[Interval, "AbstractSmith"] | None, "AbstractSmith | None"]:
+        """Abstract Smith.draw(n). draw() is draw(1).
+
+        Returns (success, exhausted):
+          success:   (value, smith after the read), or None if the read can never succeed.
+          exhausted: smith when the bits run out, or None if that can never happen.
+        """
+        assert 0 <= n <= 32, "count must be between 0 and 32"
+        if self.is_bot:
+            return None, None
+        step = Interval(n, n)
+        end = self.cursor + step
+
+        # Success needs cursor + n <= length.
+        length = self.length & Interval(end.min, None)
+        cursor = self.cursor
+        if length.max is not None:
+            cursor = cursor & Interval(None, length.max - n)
+        success = None
+        if not (length.is_bot or cursor.is_bot):
+            after = AbstractSmith(self.pattern, length, cursor + step)
+            success = (self.read(cursor, n), after)
+
+        # Exhaustion needs cursor + n > length.
+        length = self.length
+        if end.max is not None:
+            length = length & Interval(None, end.max - 1)
+        cursor = self.cursor
+        if self.length.min is not None:
+            cursor = cursor & Interval(self.length.min - n + 1, None)
+        exhausted = None
+        if not (length.is_bot or cursor.is_bot):
+            exhausted = AbstractSmith(self.pattern, length, cursor)
+
+        return success, exhausted
+
+    def read(self, cursor: Interval, n: int) -> Interval:
+        """Possible values of n bits read from position cursor."""
+        if cursor.min is not None and cursor.min == cursor.max:
+            bits = [self.bit(cursor.min + k) for k in range(n)]
+            if "?" not in bits:
+                value = int("".join(bits), 2) if bits else 0
+                if value >= 2**31:  # Java int overflow: bit 31 is the sign
+                    value -= 2**32
+                return Interval(value, value)
+        # ponytail: inexact cursor gives the full range. Upgrade: join the
+        # reading at each possible cursor position.
+        if n == 32:
+            return Interval.top()
+        return Interval(0, 2**n - 1)

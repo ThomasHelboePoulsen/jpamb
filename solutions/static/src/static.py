@@ -2,9 +2,9 @@ import heapq
 import sys
 from collections import deque
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from dataclasses import astuple
-from abstractions import Interval
+from abstractions import Interval, AbstractSmith
 from java_literals import convert_literals, get_literals_in_method
 
 import jpamb
@@ -19,6 +19,7 @@ class State(sexpr.AsSExpr):
     stack: tuple[int, ...] # list of id's
     store: tuple[tuple[int, Interval], ...] # mapping id's to intervals
     next_id: int = 0
+    smith: AbstractSmith = AbstractSmith.bot() # start with no smith
     def __post_init__(self):
         assert isinstance(self.locals, tuple)
         assert isinstance(self.stack, tuple)
@@ -29,6 +30,8 @@ class State(sexpr.AsSExpr):
     def __eq__(self, other: "State") -> bool:
         """Checks if the actual intervals are identical, ignoring raw ID numbers."""
         if len(self.locals) != len(other.locals) or len(self.stack) != len(other.stack):
+            return False
+        if self.smith != other.smith:
             return False
         for id1, id2 in zip(self.locals, other.locals):
             if self.get_val(id1) != other.get_val(id2): return False
@@ -84,24 +87,9 @@ class State(sexpr.AsSExpr):
             new_stack.append(next_id)
             new_store.append((next_id, joined_val))
             next_id += 1
+        smith = self.smith | other.smith
+        return State(tuple(new_locals), tuple(new_stack), tuple(new_store), next_id, smith).gc()
 
-        return State(tuple(new_locals), tuple(new_stack), tuple(new_store), next_id).gc()
-
-    def push(self, value: Interval):
-        assert isinstance(value, Interval), f"Expected interval but got {value}"
-        return State(self.locals, self.stack + (value,))
-
-    def pop(self, number=1):
-        return self.stack[-number:], State(self.locals, self.stack[:-number])
-
-    def load(self, index):
-        return self.locals[index]
-
-    def store(self, index, value):
-        return State(
-            tuple(self.locals[:index]) + (value,) + tuple(self.locals[index + 1 :]),
-            self.stack,
-        )
     def widen(self, other: "State", K: list[int] = None) -> "State":
         assert isinstance(other, State)
         new_locals, new_stack, new_store = [], [], []
@@ -131,8 +119,9 @@ class State(sexpr.AsSExpr):
             new_stack.append(next_id)
             new_store.append((next_id, joined_val))
             next_id += 1
-
-        return State(tuple(new_locals), tuple(new_stack), tuple(new_store), next_id).gc()
+        
+        smith = self.smith.widen(other.smith, K)
+        return State(tuple(new_locals), tuple(new_stack), tuple(new_store), next_id, smith).gc()
 
     def get_val(self, sym_id: int) -> Interval:
         for s, val in self.store:
@@ -140,26 +129,48 @@ class State(sexpr.AsSExpr):
         return Interval.top()
     def update_val(self, sym_id: int, val: Interval) -> "State":
         new_store = tuple((s, (val if s == sym_id else v)) for s, v in self.store)
-        return State(self.locals, self.stack, new_store, self.next_id)
+        return replace(self, store=new_store)
     def create_val(self, val: Interval) -> tuple[int, "State"]:
         sym_id = self.next_id
         new_store = self.store + ((sym_id, val),)
-        return sym_id, State(self.locals, self.stack, new_store, self.next_id + 1)
+        return sym_id, replace(self, store=new_store, next_id=self.next_id + 1)
+    
     def push_id(self, sym_id: int):
-        return State(self.locals, self.stack + (sym_id,), self.store, self.next_id)
+        return replace(self, stack=self.stack + (sym_id,))
     def pop_ids(self, number=1) -> tuple[tuple[int, ...], "State"]:
-        return self.stack[-number:], State(self.locals, self.stack[:-number], self.store, self.next_id)
+        return self.stack[-number:], replace(self, stack=self.stack[:-number])
     def read_local(self, index: int) -> int:
         return self.locals[index]
 
     def write_local(self, index: int, sym_id: int):
         new_locals = tuple(self.locals[:index]) + (sym_id,) + tuple(self.locals[index + 1 :])
-        return State(new_locals, self.stack, self.store, self.next_id)
-    # garbage collection
+        return replace(self, locals=new_locals)
+
     def gc(self) -> "State":
         active_ids = set(self.locals) | set(self.stack)
         new_store = tuple((s, v) for s, v in self.store if s in active_ids)
-        return State(self.locals, self.stack, new_store, self.next_id)
+        return replace(self, store=new_store)
+
+SMITH_TYPE = jvm.Object(jvm.ClassName("jpamb.utils.Smith"))
+# Exception types that catch Smith's IllegalStateException. None is a finally block.
+CATCHES_SMITH_EXHAUSTED = {
+    None,
+    "java/lang/IllegalStateException",
+    "java/lang/RuntimeException",
+    "java/lang/Exception",
+    "java/lang/Throwable",
+}
+
+def smith_exhausted(bc: jpamb.Bytecode, pc: PC, state: State) -> tuple[PC, State] | str:
+    """The Smith ran out of bits: jump to the catch handler, or stop with "illegal state"."""
+    method = bc.suite.findmethod(pc.method, eff=bc.eff)
+    for catch in method["code"].get("exceptions", []):
+        inside_try = catch["start"] <= pc.offset < catch["end"]
+        if inside_try and catch["catchType"] in CATCHES_SMITH_EXHAUSTED:
+            # The handler starts with only the exception object on the stack.
+            sym_id, out = replace(state, stack=()).create_val(Interval(min=1, max=None))
+            return (PC(pc.method, catch["handler"]), out.push_id(sym_id))
+    return "illegal state"
 
 def manystep(
     bc: jpamb.Bytecode,
@@ -263,12 +274,17 @@ def manystep(
             args_ids, after = state.pop_ids(num_args) if num_args else ((), state)  
             target_method = bc.getmethod(method_id)
             callee_locals = list(args_ids) + [0] * (target_method.max_locals - len(args_ids))
-            callee_state = State(tuple(callee_locals), (), after.store, after.next_id)
+            callee_state = State(tuple(callee_locals), (), after.store, after.next_id, after.smith)
             for i in range(len(args_ids), target_method.max_locals):
                 sym_id, callee_state = callee_state.create_val(Interval.bot())
                 callee_locals[i] = sym_id
-            callee_state = State(tuple(callee_locals), (), callee_state.store, callee_state.next_id)
-            yield (PC(method_id, 0), callee_state) 
+            callee_state = replace(callee_state, locals=tuple(callee_locals))
+            yield (PC(method_id, 0), callee_state)
+            if SMITH_TYPE in method_id.extension.params and not after.smith.is_bot:
+                # The callee may have read bits, so after the call the cursor can be anywhere from here on.
+                # NOTE: forgets how many bits the callee read; return the callee's smith if that matters.
+                smith = replace(after.smith, cursor=after.smith.cursor + Interval(0, None))
+                after = replace(after, smith=smith) 
             ret_type = method_id.extension.return_type
             match ret_type:
                 case None: next_state = after
@@ -293,6 +309,25 @@ def manystep(
             if not (recv.min == 0 and recv.max == 0):
                 sym_id, after = after.create_val(Interval(min=0, max=None))
                 yield (pc + 1, after.push_id(sym_id))
+        case jvm.InvokeInterface(method=m) if m.extension.name == "draw":
+            # draw() reads 1 bit. draw(n) reads n bits; n is on top of the stack.
+            if m.extension.params:
+                [_, n_id], after = state.pop_ids(2)
+                count = after.get_val(n_id)
+                if count.min is None or count.min != count.max:
+                    raise NotImplementedError(f"draw with non-constant count {count}")
+                n = count.min
+            else:
+                [_], after = state.pop_ids(1)
+                n = 1
+
+            success, exhausted = after.smith.draw(n)
+            if success is not None:
+                value, smith = success
+                sym_id, out = replace(after, smith=smith).create_val(value)
+                yield (pc + 1, out.push_id(sym_id))
+            if exhausted is not None:
+                yield smith_exhausted(bc, pc, replace(after, smith=exhausted))
         case jvm.Push(type=t,value=i):
             assert isinstance(t, jvm.StackType)
             sym_id, after = state.create_val(Interval.abstract([StackInt(i)]))
@@ -357,10 +392,15 @@ def initialstate(
     method = bc.getmethod(methodid)
     state = State(tuple([0] * method.max_locals), (), (), 0)
     locals = [0] * method.max_locals 
+    smith = AbstractSmith.bot()  # stays bot if the method takes no Smith
 
     if inputs is None:
         for i, p in enumerate(methodid.extension.params):
-            sym_id, state = state.create_val(Interval.top())
+            if p == SMITH_TYPE:
+                smith = AbstractSmith.unknown()  # any bitstring
+                sym_id, state = state.create_val(Interval(min=1, max=None))  # non-null reference
+            else:
+                sym_id, state = state.create_val(Interval.top())
             locals[i] = sym_id
        
     else:
@@ -372,13 +412,17 @@ def initialstate(
                 case jpamb.case.Array() | jpamb.case.String():
                     sym_id, state = state.create_val(Interval(min=0,max=None))
                     locals[i] = sym_id
+                case jpamb.case.Smith(value=value):
+                    smith = AbstractSmith.from_bits(value)  # exactly this bitstring
+                    sym_id, state = state.create_val(Interval(min=1, max=None))  # non-null reference
+                    locals[i] = sym_id
                 case _:
                     raise NotImplementedError(f"Unsupported value {x!r}")
     for i in range(len(locals)):
         if locals[i] == 0 and i >= (len(methodid.extension.params) if inputs is None else len(inputs.values)):
             sym_id, state = state.create_val(Interval.bot())
             locals[i] = sym_id
-    state = State(tuple(locals), (), state.store, state.next_id)
+    state = State(tuple(locals), (), state.store, state.next_id, smith)
     return {PC(methodid, 0): state}
 
 
