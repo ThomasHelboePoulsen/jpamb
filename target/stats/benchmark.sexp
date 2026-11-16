@@ -342,6 +342,38 @@
     )
     :results ("assertion error")
   )
+  :"jpamb.cases.Randomness.branchOverlap!(r'00000')V" (control
+    :coverage (
+      :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 14 15 16 23 24 25 26 27 28 29 30)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.Randomness.branchOverlap!(r'00001')V" (control
+    :coverage (
+      :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 14 15 16 23 24 25 26 27 28 29 34)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.Randomness.branchOverlap!(r'110000000000000')V" (control
+    :coverage (
+      :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 14 15 16 17 18 19 20 21)
+      )
+    )
+    :results ("divide by zero")
+  )
+  :"jpamb.cases.Randomness.branchOverlap!(r'110001010111011')V" (control
+    :coverage (
+      :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 34)
+      )
+    )
+    :results (ok)
+  )
   :"jpamb.cases.Randomness.drawDependsOnArg!(0, r'0')I" (control
     :coverage (
       :"jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I" (coverage
@@ -1030,6 +1062,14 @@
       )
     )
     :results ("assertion error")
+  )
+  :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (control
+    :coverage (
+      :"jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 34)
+      )
+    )
+    :results ("assertion error" "divide by zero" ok)
   )
   :"jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I" (control
     :coverage (
