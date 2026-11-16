@@ -26,7 +26,14 @@
     }
   ],
   "innerclasses": [],
-  "interfaces": [],
+  "interfaces": [
+    {
+      "annotations": [],
+      "args": [],
+      "inner": null,
+      "name": "jpamb/utils/BitVector"
+    }
+  ],
   "methods": [
     {
       "access": [
@@ -384,93 +391,6 @@
             "static": false
           },
           {
-            "index": 1,
-            "offset": 4,
-            "opr": "load",
-            "type": "int"
-          },
-          {
-            "access": "virtual",
-            "method": {
-              "args": [
-                "int"
-              ],
-              "name": "charAt",
-              "ref": {
-                "kind": "class",
-                "name": "java/lang/String"
-              },
-              "returns": "char"
-            },
-            "offset": 5,
-            "opr": "invoke"
-          },
-          {
-            "offset": 8,
-            "opr": "return",
-            "type": "int"
-          }
-        ],
-        "exceptions": [],
-        "lines": [
-          {
-            "line": 21,
-            "offset": 0
-          }
-        ],
-        "max_locals": 2,
-        "max_stack": 2,
-        "stack_map": null
-      },
-      "default": null,
-      "exceptions": [],
-      "name": "bitAt",
-      "params": [
-        {
-          "annotations": [],
-          "type": {
-            "annotations": [],
-            "base": "int"
-          },
-          "visible": true
-        }
-      ],
-      "returns": {
-        "annotations": [],
-        "type": {
-          "base": "char"
-        }
-      },
-      "typeparams": []
-    },
-    {
-      "access": [
-        "public"
-      ],
-      "annotations": [],
-      "code": {
-        "annotations": [],
-        "bytecode": [
-          {
-            "index": 0,
-            "offset": 0,
-            "opr": "load",
-            "type": "ref"
-          },
-          {
-            "field": {
-              "class": "jpamb/utils/Bitstring",
-              "name": "bits",
-              "type": {
-                "kind": "class",
-                "name": "java/lang/String"
-              }
-            },
-            "offset": 1,
-            "opr": "get",
-            "static": false
-          },
-          {
             "access": "virtual",
             "method": {
               "args": [],
@@ -493,7 +413,7 @@
         "exceptions": [],
         "lines": [
           {
-            "line": 25,
+            "line": 22,
             "offset": 0
           }
         ],
@@ -522,6 +442,250 @@
         "annotations": [],
         "bytecode": [
           {
+            "index": 1,
+            "offset": 0,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "condition": "lt",
+            "offset": 1,
+            "opr": "ifz",
+            "target": 7
+          },
+          {
+            "index": 1,
+            "offset": 4,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "index": 0,
+            "offset": 5,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "field": {
+              "class": "jpamb/utils/Bitstring",
+              "name": "bits",
+              "type": {
+                "kind": "class",
+                "name": "java/lang/String"
+              }
+            },
+            "offset": 6,
+            "opr": "get",
+            "static": false
+          },
+          {
+            "access": "virtual",
+            "method": {
+              "args": [],
+              "name": "length",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/String"
+              },
+              "returns": "int"
+            },
+            "offset": 9,
+            "opr": "invoke"
+          },
+          {
+            "condition": "lt",
+            "offset": 12,
+            "opr": "if",
+            "target": 12
+          },
+          {
+            "class": "java/lang/IndexOutOfBoundsException",
+            "offset": 15,
+            "opr": "new"
+          },
+          {
+            "offset": 18,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "index": 1,
+            "offset": 19,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/IndexOutOfBoundsException"
+              },
+              "returns": null
+            },
+            "offset": 20,
+            "opr": "invoke"
+          },
+          {
+            "offset": 23,
+            "opr": "throw"
+          },
+          {
+            "index": 0,
+            "offset": 24,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "field": {
+              "class": "jpamb/utils/Bitstring",
+              "name": "bits",
+              "type": {
+                "kind": "class",
+                "name": "java/lang/String"
+              }
+            },
+            "offset": 25,
+            "opr": "get",
+            "static": false
+          },
+          {
+            "index": 1,
+            "offset": 28,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "access": "virtual",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "charAt",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/String"
+              },
+              "returns": "char"
+            },
+            "offset": 29,
+            "opr": "invoke"
+          },
+          {
+            "offset": 32,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 49
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 34,
+            "opr": "if",
+            "target": 20
+          },
+          {
+            "offset": 37,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 1
+            }
+          },
+          {
+            "offset": 38,
+            "opr": "goto",
+            "target": 21
+          },
+          {
+            "offset": 41,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 0
+            }
+          },
+          {
+            "offset": 42,
+            "opr": "return",
+            "type": "int"
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 27,
+            "offset": 0
+          },
+          {
+            "line": 28,
+            "offset": 7
+          },
+          {
+            "line": 30,
+            "offset": 12
+          }
+        ],
+        "max_locals": 2,
+        "max_stack": 3,
+        "stack_map": [
+          {
+            "index": 7,
+            "type": "same"
+          },
+          {
+            "index": 12,
+            "type": "same"
+          },
+          {
+            "index": 20,
+            "type": "same"
+          },
+          {
+            "index": 21,
+            "info": {
+              "type": "integer"
+            },
+            "type": "same_locals_1_stack_item_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "bitAt",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "base": "int"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": {
+          "base": "boolean"
+        }
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public"
+      ],
+      "annotations": [],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
             "index": 0,
             "offset": 0,
             "opr": "load",
@@ -549,7 +713,7 @@
         "exceptions": [],
         "lines": [
           {
-            "line": 30,
+            "line": 35,
             "offset": 0
           }
         ],

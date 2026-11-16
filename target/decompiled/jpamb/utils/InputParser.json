@@ -1570,7 +1570,7 @@
               "args": [
                 {
                   "kind": "class",
-                  "name": "jpamb/utils/Bitstring"
+                  "name": "jpamb/utils/BitVector"
                 }
               ],
               "is_interface": false,
