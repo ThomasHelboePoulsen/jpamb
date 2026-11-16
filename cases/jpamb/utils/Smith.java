@@ -41,4 +41,9 @@ final class BitSmith implements Smith {
             throw new IllegalStateException("Smith input exhausted");
         }
     }
+
+    @Override
+    public String toString() {
+        return source.toString();
+    }
 }
