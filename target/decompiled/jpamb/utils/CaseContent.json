@@ -1491,13 +1491,19 @@
             "type": "ref"
           },
           {
-            "access": "virtual",
+            "access": "static",
             "method": {
-              "args": [],
-              "name": "bits",
+              "args": [
+                {
+                  "kind": "class",
+                  "name": "java/lang/Object"
+                }
+              ],
+              "is_interface": false,
+              "name": "valueOf",
               "ref": {
                 "kind": "class",
-                "name": "jpamb/utils/BitSmith"
+                "name": "java/lang/String"
               },
               "returns": {
                 "kind": "class",

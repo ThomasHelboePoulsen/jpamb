@@ -6,36 +6,39 @@ public interface Smith {
 }
 
 final class BitSmith implements Smith {
-    private final Bitstring bits;
+    private final BitVector source;
     private int index;
 
-    BitSmith(Bitstring bits) {
-        this.bits = bits;
-    }
-
-    String bits() {
-        return bits.toString();
+    BitSmith(BitVector source) {
+        this.source = source;
     }
 
     @Override
     public boolean draw() {
-        if (index >= bits.length()) {
-            throw new IllegalStateException("Smith input exhausted");
-        }
-        return bits.bitAt(index++) != '0';
+        ensureAvailable(1);
+        return source.bitAt(index++);
     }
 
     @Override
-    public int draw(int bits) {
-        if (index + bits >= this.bits.length()) {
-            throw new IllegalStateException("Smith input exhausted");
+    public int draw(int count) {
+        if (count < 0 || count > Integer.SIZE) {
+            throw new IllegalArgumentException(
+                "count must be between 0 and 32"
+            );
         }
+
+        ensureAvailable(count);
+
         int value = 0;
-        for (int i = index; i < index + bits; i++) {
-            value = (value << 1) | (this.bits.bitAt(i) == '0' ? 0 : 1);
+        for (int i = 0; i < count; i++) {
+            value = (value << 1) | (draw() ? 1 : 0);
         }
-        index += bits;
         return value;
     }
+
+    private void ensureAvailable(int count) {
+        if (index + count > source.length()) {
+            throw new IllegalStateException("Smith input exhausted");
+        }
+    }
 }
- 

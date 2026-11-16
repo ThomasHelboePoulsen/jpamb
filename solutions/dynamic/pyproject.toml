@@ -19,6 +19,7 @@ dependencies = [
 dynamic-interpreter = "dynamic:interpret"
 dynamic-analysis = "dynamic:analyse"
 dynamic-dict-analysis = "dynamic_dict:analyse"
+dynamic-coverage-analysis = "dynamic_coverage:analyse"
 
 [tool.uv.sources]
 jpamb = { path = "../../", editable = true }

@@ -79,7 +79,7 @@ def draw_int(state: jvmc.State, ref: jvmc.StackReference, count: int) -> int | s
     bits_ref = smith.fields[bits_field]
     index = smith.fields[index_field].value
     bits = state.heap[bits_ref].content
-    if index + count >= len(bits):
+    if index + count > len(bits):
         return "illegal state"
     value = 0
     for bit in bits[index:index + count]:
