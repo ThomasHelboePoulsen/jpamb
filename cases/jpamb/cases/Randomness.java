@@ -37,6 +37,7 @@ public class Randomness {
     @Case("(r'1') -> ok")
     @Case("(r'0001') -> ok")
     @Case("(r'00001') -> assertion error")
+    @Case("(r'0000') -> *")
     public static void loopUntilHeads(Smith smith) {
         int tails = 0;
         while (!smith.draw()) {
@@ -78,35 +79,36 @@ public class Randomness {
         assert heads(smith);
     }
 
+    @Case("(r'100000000000000000000000000000001') -> ok")
     @Case("(r'1') -> assertion error")
-    @Case("(r'000010000000001') -> ok")
-    @Case("(r'1100010101110101011101010') -> ok")
-    @Case("(r'01010000000000') -> divide by zero")
-    @Case("(r'0001') -> ok")
+    public static void compareInts(Smith smith) {
+        int first = smith.draw(32);
+        int second = smith.draw(32);
+        assert first == second && first != 0;
+    }
+
+    @Case("(r'1') -> divide by zero")
+    @Case("(r'0001') -> assertion error")
+    @Case("(r'00001') -> ok")
+    @Case("(r'0000100000000000000000000000000000001') -> assertion error")
+    @Case("(r'010110000000001') -> ok")
     public static void drawInt(Smith smith) {
-        int value = 0;
-        try {
-            value = smith.draw(4);
-        } catch (IllegalStateException e) {
-            assert false;
-        }
+        int value = smith.draw(4);
 
         if (value >= 5) {
             int quotient = 1 / smith.draw(10);
         }
+        assert smith.draw(32) != 0
+            && smith.draw(32) == 0;
     }
 
     @Case("(r'00001') -> ok")
-    @Case("(r'00000') -> assertion error")
-    @Case("(r'110001010111011') -> ok")
-    @Case("(r'110000000000000') -> divide by zero")
+    @Case("(r'0000') -> assertion error")
+    @Case("(r'0101') -> divide by zero")
+    @Case("(r'010110000000001') -> ok")
+    @Case("(r'01011000000000') -> assertion error")
     public static void branchOverlap(Smith smith) {
-        int value = 0;
-        try {
-            value = smith.draw(4);
-        } catch (IllegalStateException e) {
-            assert false;
-        }
+        int value = smith.draw(4);
         if (value >= 5) {
             value = 1 / smith.draw(10);
         }
