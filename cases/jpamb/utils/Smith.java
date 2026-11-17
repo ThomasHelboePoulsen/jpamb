@@ -8,14 +8,20 @@ public interface Smith {
 final class BitSmith implements Smith {
     private final BitVector source;
     private int index;
+    private boolean exhausted;
 
     BitSmith(BitVector source) {
         this.source = source;
+        exhausted = false;
     }
 
     @Override
     public boolean draw() {
-        ensureAvailable(1);
+        if (index == source.length()) {
+            exhausted = true;
+            return false;
+        }
+
         return source.bitAt(index++);
     }
 
@@ -27,19 +33,11 @@ final class BitSmith implements Smith {
             );
         }
 
-        ensureAvailable(count);
-
         int value = 0;
         for (int i = 0; i < count; i++) {
             value = (value << 1) | (draw() ? 1 : 0);
         }
         return value;
-    }
-
-    private void ensureAvailable(int count) {
-        if (index + count > source.length()) {
-            throw new IllegalStateException("Smith input exhausted");
-        }
     }
 
     @Override
