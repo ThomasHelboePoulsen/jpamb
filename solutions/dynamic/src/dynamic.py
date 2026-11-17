@@ -52,7 +52,7 @@ def compare(op, v1: int, v2: int) -> bool:
             raise NotImplementedError(f"Unhandled comparation {op!r}")
 
 
-def draw_bit(state: jvmc.State, ref: jvmc.StackReference) -> bool | str:
+def draw_bit(state: jvmc.State, ref: jvmc.StackReference) -> bool:
     smith = state.heap[ref]
     assert isinstance(smith, jvmc.HeapObject)
     bits_field = jvm.FieldID(
@@ -66,46 +66,30 @@ def draw_bit(state: jvmc.State, ref: jvmc.StackReference) -> bool | str:
     bits = state.heap[bits_ref]
     assert isinstance(bits, jvmc.HeapString)
     if index.value >= len(bits.content):
-        return "illegal state"
+        return False
 
     smith.fields[index_field] = jvmc.StackInt(index.value + 1)
     return bits.content[index.value] != "0"
 
 
 def draw_int(state: jvmc.State, ref: jvmc.StackReference, count: int) -> int | str:
+    if not 0 <= count <= 32:
+        return "illegal argument"
     smith = state.heap[ref]
     bits_field = jvm.FieldID("bits", jvm.Object(jvm.ClassName("java.lang.String")))
     index_field = jvm.FieldID("index", jvm.Int())
     bits_ref = smith.fields[bits_field]
     index = smith.fields[index_field].value
     bits = state.heap[bits_ref].content
-    if index + count > len(bits):
-        return "illegal state"
     value = 0
-    for bit in bits[index:index + count]:
+    for bit in bits[index:index + count].ljust(count, "0"):
         value = value * 2 + int(bit)
-    smith.fields[index_field] = jvmc.StackInt(index + count)
+    smith.fields[index_field] = jvmc.StackInt(min(index + count, len(bits)))
     # Keep the result in Java's int range: -2**31 to 2**31 - 1.
     value = value % (2**32)
     if value >= 2**31:
         value -= 2**32
     return value
-
-
-def jump_to_smith_catch(bc: jpamb.Bytecode, state: jvmc.State) -> jvmc.State | str:
-    """Jump to the Java catch block when Smith runs out of bits."""
-    frame = state.frames.peek()
-    method = bc.suite.findmethod(frame.pc.method, eff=bc.eff)
-    for catch in method["code"].get("exceptions", []):
-        right_type = catch["catchType"] == "java/lang/IllegalStateException"
-        inside_try = catch["start"] <= frame.pc.offset < catch["end"]
-        if right_type and inside_try:
-            exception = jvmc.HeapObject(jvm.ClassName("java.lang.IllegalStateException"), {})
-            frame.stack = jvmc.OperandStack()
-            frame.stack.push(state.heap.new(exception))
-            frame.pc = jvmc.PC(frame.pc.method, catch["handler"])
-            return state
-    return "illegal state"
 
 
 def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | str]:
@@ -349,7 +333,7 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                         assert isinstance(method.extension.return_type, jvm.Int)
                         value = draw_int(state, ref, args[0])
                     if isinstance(value, str):
-                        output = jump_to_smith_catch(bc, state)
+                        output = value
                     else:
                         frame.stack.push(
                             jvmc.StackInt(int(value))

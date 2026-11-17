@@ -30,12 +30,22 @@ def test_draw_int(suite):
     methodid = find_method_id(suite, "drawInt")
     structure = get_bitstring_structure(methodid, suite)
 
-    # Expected:
-    # 1. smith.draw(4)  -> bits 0..3 (integer)
-    # 2. smith.draw(10) -> bits 4..13 (integer)
+    # The two 32-bit reads start at different offsets on each branch.
     assert structure == [
         ("integer", 0, 3),
         ("integer", 4, 13),
+        ("integer", 4, 35),
+        ("integer", 14, 45),
+        ("integer", 36, 67),
+        ("integer", 46, 77),
+    ]
+
+
+def test_compare_ints(suite):
+    methodid = find_method_id(suite, "compareInts")
+    assert get_bitstring_structure(methodid, suite) == [
+        ("integer", 0, 31),
+        ("integer", 32, 63),
     ]
 
 
