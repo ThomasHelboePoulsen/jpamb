@@ -14,6 +14,7 @@ from java_literals import (
     get_literals_in_method,
 )
 from state_snapshot import state_snapshot
+from static import collect_smith_fields
 
 
 def binary(op, v1: int, v2: int) -> int | str:
@@ -594,7 +595,22 @@ def get_method_dictionary(methodid, suite) -> dict[type, list]:
     return convert_literals(raw_literals)
 
 
-def analysis_inputs(methodid, suite):
+def get_analysis_structure(
+    bc: jpamb.Bytecode, methodid: jvm.AbsMethodID
+) -> list[tuple[str, int, int]]:
+    bitstring_structure = get_bitstring_structure(methodid, bc.suite)
+    smith_type = jvm.Object(jvm.ClassName("jpamb.utils.Smith"))
+    smith_count = sum(1 for param in methodid.extension.params if param == smith_type)
+    if smith_count != 1:
+        return bitstring_structure
+
+    return sorted(
+        set(bitstring_structure) | collect_smith_fields(bc, methodid),
+        key=lambda field: (field[1], field[2], field[0]),
+    )
+
+
+def analysis_inputs(methodid, suite, bitstring_structure=None):
     if not methodid.extension.params:
         yield jpamb.case.Input(())
         return
@@ -605,7 +621,6 @@ def analysis_inputs(methodid, suite):
     yield from generate_inputs_from_dict(methodid, suite)
     
     dictionary = get_method_dictionary(methodid, suite)
-    bitstring_structure = get_bitstring_structure(methodid, suite)
 
     smith_idx = next( #find smith 
         (
@@ -616,6 +631,8 @@ def analysis_inputs(methodid, suite):
         None,
     )
     if smith_idx is not None:
+        if bitstring_structure is None:
+            bitstring_structure = get_bitstring_structure(methodid, suite)
         for bits in generate_inputs(bitstring_structure, dictionary):
             args = []
             for i, p in enumerate(methodid.extension.params):
@@ -703,7 +720,7 @@ def run_initial_seeds(
     used_corpus: set[jpamb.case.Input] = set()
 
     corpus = []
-    for raw_seed in analysis_inputs(methodid, suite):
+    for raw_seed in analysis_inputs(methodid, suite, structure):
         norm_values = tuple(
             jpamb.case.Array(v.contains, tuple(v.values))
             if isinstance(v, jpamb.case.Array) and not isinstance(v.values, tuple)
@@ -786,7 +803,7 @@ def analyse():
     BUDGET = 200
 
     dictionary = get_method_dictionary(methodid, suite)
-    structure = list(get_bitstring_structure(methodid, suite))
+    structure = get_analysis_structure(bc, methodid)
 
     #run on initial inputs from dictionary
     behaviors, pc_coverage, corpus, used_corpus, structure = run_initial_seeds(

@@ -83,6 +83,31 @@ def test_branch_overlap(suite):
     ]
 
 
+def test_static_draw_width_guides_coverage(tmp_path, monkeypatch):
+    from dynamic_coverage import get_analysis_structure
+
+    monkeypatch.chdir(tmp_path)
+    source = tmp_path / "cases" / "WidthExample.java"
+    source.parent.mkdir()
+    source.write_text(
+        "class WidthExample { static int run(Smith smith) { return smith.draw(2 + 2); } }",
+        encoding="utf-8",
+    )
+    suite = jpamb.Suite.from_workdir(tmp_path)
+    methodid = jvm.AbsMethodID.decode("WidthExample.run:(Ljpamb/utils/Smith;)I")
+    draw = jvm.AbsMethodID.decode("jpamb.utils.Smith.draw:(I)I")
+    opcodes = [
+        jvm.Load(type=jvm.Reference(), index=0, offset=0),
+        jvm.Push(type=jvm.Int(), value=4, offset=1),
+        jvm.InvokeInterface(method=draw, stack_size=2, offset=2),
+        jvm.Return(type=jvm.Int(), offset=3),
+    ]
+    bc = jpamb.Bytecode(suite, Effect(None), {methodid: jvm.Method(methodid, opcodes, 1)})
+
+    assert get_bitstring_structure(methodid, suite) == [("integer", 0, 31)]
+    assert get_analysis_structure(bc, methodid) == [("integer", 0, 3), ("integer", 0, 31)]
+
+
 if __name__ == "__main__":
     current_suite = jpamb.Suite.from_workdir(Path.cwd())
     eff = Effect(None)

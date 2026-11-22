@@ -157,6 +157,7 @@ def manystep(
     bc: jpamb.Bytecode,
     pc: PC,
     state: State,
+    draw_fields: set[tuple[str, int, int]] | None = None,
 ) -> Iterable[tuple[PC, object] | str]:
     opr = bc[pc]
     match opr:
@@ -304,6 +305,16 @@ def manystep(
 
             result = after.smith.draw(n)
             if result is not None:
+                cursor = after.smith.cursor
+                if (
+                    draw_fields is not None
+                    and m.classname == SMITH_TYPE.name
+                    and n > 0
+                    and cursor.min is not None
+                    and cursor.min == cursor.max
+                ):
+                    kind = "integer" if m.extension.params else "boolean"
+                    draw_fields.add((kind, cursor.min, cursor.min + n - 1))
                 value, smith = result
                 sym_id, out = replace(after, smith=smith).create_val(value)
                 yield (pc + 1, out.push_id(sym_id))
@@ -422,15 +433,21 @@ class AbstractInterpreter:
         k_set.add(0)
         return AbstractInterpreter(bc, worklist, states, sorted(list(k_set)))
 
-    def step(self) -> tuple[PC, set[str]]:
+    def step(
+        self,
+        *,
+        draw_fields: set[tuple[str, int, int]] | None = None,
+        trace: bool = True,
+    ) -> tuple[PC, set[str]]:
         self.worklist.sort(key=lambda p: p.offset, reverse=True)
         pc = self.worklist.pop() # pop for DFS, popleft for BFS
 
-        print(f"Stepping {pc}:\n > {self.bc[pc]}", file=sys.stderr)
+        if trace:
+            print(f"Stepping {pc}:\n > {self.bc[pc]}", file=sys.stderr)
 
         finals = set()
 
-        for res in manystep(self.bc, pc, self.states[pc]):
+        for res in manystep(self.bc, pc, self.states[pc], draw_fields):
             if isinstance(res, str):
                 finals.add(res)
             else:
@@ -451,6 +468,24 @@ class AbstractInterpreter:
                     self.worklist.append(pc_)
 
         return pc, finals
+
+
+def collect_smith_fields(
+    bc: jpamb.Bytecode, methodid: jvm.AbsMethodID, *, max_steps: int = 300
+) -> set[tuple[str, int, int]]:
+    """Collect exact draw fields for use as input generation hints."""
+    interpreter = AbstractInterpreter.initial(bc, methodid, None)
+    fields: set[tuple[str, int, int]] = set()
+    for _ in range(max_steps):
+        if not interpreter.worklist:
+            break
+        try:
+            interpreter.step(draw_fields=fields, trace=False)
+        except (NotImplementedError, AssertionError):
+            # Unsupported transfers end this path. Other queued paths can still yield hints.
+            continue
+    return fields
+
 
 # helper function for invoke static
 def analyze_method(
