@@ -1,7 +1,11 @@
 # dynamic analysis using coverage based fuzzing.
+import argparse
+import json
 import random
 import sys
 import string
+from pathlib import Path
+
 from bitstring_structure import get_bitstring_structure
 from helpers.bitstring_input_generation import generate_inputs, mutate_input as mutate_bitstring
 import jpamb
@@ -596,9 +600,17 @@ def get_method_dictionary(methodid, suite) -> dict[type, list]:
 
 
 def get_analysis_structure(
-    bc: jpamb.Bytecode, methodid: jvm.AbsMethodID
+    bc: jpamb.Bytecode,
+    methodid: jvm.AbsMethodID,
+    *,
+    use_syntax: bool = True,
+    use_static: bool = True,
 ) -> list[tuple[str, int, int]]:
-    bitstring_structure = get_bitstring_structure(methodid, bc.suite)
+    bitstring_structure = get_bitstring_structure(methodid, bc.suite) if use_syntax else []
+    if not use_static:
+        return bitstring_structure
+
+
     smith_type = jvm.Object(jvm.ClassName("jpamb.utils.Smith"))
     smith_count = sum(1 for param in methodid.extension.params if param == smith_type)
     if smith_count != 1:
@@ -788,13 +800,26 @@ def fuzz_coverage(
 
 def analyse():
     """The dynamic analysis: initial seeds + coverage-based fuzzing."""
-    methodid = jpamb.getmethodid(
-        "dynamic",
-        "1.0",
-        "Bit Diddlers",
-        ["dynamic", "python"],
-        for_science=True,
+    parser = argparse.ArgumentParser(description=analyse.__doc__)
+    parser.add_argument("method", help="Java method ID, or 'info'")
+    parser.add_argument(
+        "--no-syntax", dest="use_syntax", action="store_false",
+        help="Skip bit fields inferred from Java syntax",
     )
+    parser.add_argument(
+        "--no-static", dest="use_static", action="store_false",
+        help="Skip bit fields inferred by the static interpreter",
+    )
+    parser.add_argument(
+        "--coverage-file", type=Path, metavar="PATH",
+        help="Append one JSON line with instruction coverage for this method",
+    )
+    args = parser.parse_args()
+    if args.method == "info":
+        jpamb.printinfo(
+            "dynamic", "1.0", "Bit Diddlers", ["dynamic", "python"], for_science=True,
+        )
+    methodid = jpamb.parse_methodid(args.method)
 
     suite, eff = jpamb.setup()
     bc = jpamb.Bytecode(suite, eff, {})
@@ -803,7 +828,9 @@ def analyse():
     BUDGET = 200
 
     dictionary = get_method_dictionary(methodid, suite)
-    structure = get_analysis_structure(bc, methodid)
+    structure = get_analysis_structure(
+        bc, methodid, use_syntax=args.use_syntax, use_static=args.use_static,
+    )
 
     #run on initial inputs from dictionary
     behaviors, pc_coverage, corpus, used_corpus, structure = run_initial_seeds(
@@ -823,6 +850,18 @@ def analyse():
         max_steps=MAX_STEPS,
     )
     behaviors.update(fuzz_behaviors)
+
+    if args.coverage_file is not None:
+        record = {
+            "method": str(methodid),
+            "syntactic_fields": args.use_syntax,
+            "static_fields": args.use_static,
+            "total_instructions": len(bc.getmethod(methodid).opcodes),
+            "covered_instructions": sum(1 for pc in pc_coverage if pc.method == methodid),
+        }
+        args.coverage_file.parent.mkdir(parents=True, exist_ok=True)
+        with args.coverage_file.open("a", encoding="utf-8") as file:
+            file.write(json.dumps(record) + "\n")
 
     for query in jpamb.QUERIES:
         if query in behaviors:
