@@ -831,53 +831,49 @@ class AbstractSmith(Abstraction, Lattice):
 
     # --- the abstract draw ---
 
-    def draw(self, n: int) -> tuple[tuple[Interval, "AbstractSmith"] | None, "AbstractSmith | None"]:
-        """Abstract Smith.draw(n). draw() is draw(1).
-
-        Returns (success, exhausted):
-          success:   (value, smith after the read), or None if the read can never succeed.
-          exhausted: smith when the bits run out, or None if that can never happen.
-        """
+    def draw(self, n: int) -> tuple[Interval, "AbstractSmith"] | None:
+        """Return the zero-padded value and the Smith after reading up to n bits."""
         assert 0 <= n <= 32, "count must be between 0 and 32"
         if self.is_bot:
-            return None, None
-        step = Interval(n, n)
-        end = self.cursor + step
+            return None
+        if n == 0:
+            return Interval(0, 0), self
 
-        # Success needs cursor + n <= length.
-        length = self.length & Interval(end.min, None)
-        cursor = self.cursor
-        if length.max is not None:
-            cursor = cursor & Interval(None, length.max - n)
-        success = None
-        if not (length.is_bot or cursor.is_bot):
-            after = AbstractSmith(self.pattern, length, cursor + step)
-            success = (self.read(cursor, n), after)
-
-        # Exhaustion needs cursor + n > length.
-        length = self.length
-        if end.max is not None:
-            length = length & Interval(None, end.max - 1)
-        cursor = self.cursor
-        if self.length.min is not None:
-            cursor = cursor & Interval(self.length.min - n + 1, None)
-        exhausted = None
-        if not (length.is_bot or cursor.is_bot):
-            exhausted = AbstractSmith(self.pattern, length, cursor)
-
-        return success, exhausted
+        end = self.cursor + Interval(n, n)
+        # The cursor advances for actual bits only. The upper bound ignores
+        # unbounded maxima, whereas an unbounded minimum stays unbounded.
+        cursor_min = None
+        if end.min is not None and self.length.min is not None:
+            cursor_min = min(end.min, self.length.min)
+        cursor_max = min(
+            (bound for bound in (end.max, self.length.max) if bound is not None),
+            default=None,
+        )
+        after = AbstractSmith(self.pattern, self.length, Interval(cursor_min, cursor_max))
+        return self.read(self.cursor, n), after
 
     def read(self, cursor: Interval, n: int) -> Interval:
-        """Possible values of n bits read from position cursor."""
-        if cursor.min is not None and cursor.min == cursor.max:
-            bits = [self.bit(cursor.min + k) for k in range(n)]
-            if "?" not in bits:
-                value = int("".join(bits), 2) if bits else 0
-                if value >= 2**31:  # Java int overflow: bit 31 is the sign
-                    value -= 2**32
-                return Interval(value, value)
-        # ponytail: inexact cursor gives the full range. Upgrade: join the
-        # reading at each possible cursor position.
-        if n == 32:
-            return Interval.top()
-        return Interval(0, 2**n - 1)
+        """Bound the value of n bits, with zeros for positions past the end."""
+        exact_cursor = cursor.min is not None and cursor.min == cursor.max
+        earliest_start = cursor.min if cursor.min is not None else 0
+        minimum = maximum = 0
+        for offset in range(n):
+            position = earliest_start + offset
+            bit = "?"
+            if self.length.max is not None and position >= self.length.max:
+                bit = "0"
+            elif exact_cursor:
+                bit = self.bit(position)
+                if bit == "1" and (self.length.min is None or position >= self.length.min):
+                    bit = "?"
+
+            weight = 1 << (n - offset - 1)
+            if n == 32 and offset == 0:
+                weight = -weight  # Java int sign bit.
+            if bit == "1":
+                minimum += weight
+                maximum += weight
+            elif bit == "?":
+                minimum += min(0, weight)
+                maximum += max(0, weight)
+        return Interval(minimum, maximum)

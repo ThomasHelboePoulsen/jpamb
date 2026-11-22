@@ -152,25 +152,6 @@ class State(sexpr.AsSExpr):
         return replace(self, store=new_store)
 
 SMITH_TYPE = jvm.Object(jvm.ClassName("jpamb.utils.Smith"))
-# Exception types that catch Smith's IllegalStateException. None is a finally block.
-CATCHES_SMITH_EXHAUSTED = {
-    None,
-    "java/lang/IllegalStateException",
-    "java/lang/RuntimeException",
-    "java/lang/Exception",
-    "java/lang/Throwable",
-}
-
-def smith_exhausted(bc: jpamb.Bytecode, pc: PC, state: State) -> tuple[PC, State] | str:
-    """The Smith ran out of bits: jump to the catch handler, or stop with "illegal state"."""
-    method = bc.suite.findmethod(pc.method, eff=bc.eff)
-    for catch in method["code"].get("exceptions", []):
-        inside_try = catch["start"] <= pc.offset < catch["end"]
-        if inside_try and catch["catchType"] in CATCHES_SMITH_EXHAUSTED:
-            # The handler starts with only the exception object on the stack.
-            sym_id, out = replace(state, stack=()).create_val(Interval(min=1, max=None))
-            return (PC(pc.method, catch["handler"]), out.push_id(sym_id))
-    return "illegal state"
 
 def manystep(
     bc: jpamb.Bytecode,
@@ -321,13 +302,11 @@ def manystep(
                 [_], after = state.pop_ids(1)
                 n = 1
 
-            success, exhausted = after.smith.draw(n)
-            if success is not None:
-                value, smith = success
+            result = after.smith.draw(n)
+            if result is not None:
+                value, smith = result
                 sym_id, out = replace(after, smith=smith).create_val(value)
                 yield (pc + 1, out.push_id(sym_id))
-            if exhausted is not None:
-                yield smith_exhausted(bc, pc, replace(after, smith=exhausted))
         case jvm.Push(type=t,value=i):
             assert isinstance(t, jvm.StackType)
             sym_id, after = state.create_val(Interval.abstract([StackInt(i)]))
