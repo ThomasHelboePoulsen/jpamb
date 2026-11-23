@@ -252,8 +252,9 @@ def test_smith_draw_examples():
     assert value == ab.Interval(0, 0)
     value, smith = smith.draw(1)
     assert value == ab.Interval(1, 1)
-    value, smith = smith.draw(1)  # past the end: 0, index stays at the end
-    assert value == ab.Interval(0, 0) and smith.cursor == ab.Interval(2, 2)
+    value, smith = smith.draw(1)  # past the end: 0; the real index stays at min(3, 2) = 2
+    assert value == ab.Interval(0, 0) and smith.cursor == ab.Interval(3, 3)
+    assert ("01", 2) in smith
 
     value, _ = ab.AbstractSmith.from_bits("1").draw(4)  # 1 + 000 padding
     assert value == ab.Interval(8, 8)
@@ -261,3 +262,35 @@ def test_smith_draw_examples():
     value, after = ab.AbstractSmith.unknown().draw(4)
     assert value == ab.Interval(0, 15)
     assert after.length == ab.Interval(0, None)
+
+
+@given(st_concrete(), st.integers(min_value=0, max_value=6), st_smith(), st_i32(), st_i32())
+def test_smith_learn_is_sound(concrete, n, other, a, b):
+    """Learning any range that holds the real value never loses the real bitstring."""
+    bits, index = concrete
+    smith = ab.AbstractSmith.abstract([concrete]) | other
+    value, new_index = concrete_draw(bits, index, n)
+    result, after = smith.draw(n)
+    if not isinstance(result, ab.Drawn):
+        return
+    lo, hi = sorted([a, b])
+    known = ab.Interval(min(lo, value), max(hi, value))
+    for narrowed in (ab.Interval(value, value), known):
+        assert (bits, new_index) in after.learn(result.start, result.width, narrowed)
+
+
+def test_smith_learn_examples():
+    # draw() is 1 on the true branch: that bit is 1 and the string is that long
+    value, smith = ab.AbstractSmith.unknown().draw(1)
+    learned = smith.learn(value.start, value.width, ab.Interval(1, 1))
+    assert learned.pattern == "1" and learned.length == ab.Interval(1, None)
+
+    # draw(4) >= 8: only the top bit is shared by 8..15
+    value, smith = ab.AbstractSmith.unknown().draw(4)
+    assert smith.learn(value.start, value.width, ab.Interval(8, 15)).pattern == "1"
+
+    # input "1", bit 1 read as 0: that 0 is padding, the string stays "1"
+    smith = ab.AbstractSmith.from_bits("1")
+    _, smith = smith.draw(1)
+    value, smith = smith.draw(1)
+    assert smith.learn(value.start, value.width, ab.Interval(0, 0)) == smith

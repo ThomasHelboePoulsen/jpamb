@@ -54,3 +54,15 @@ def test_randomness_case(case):
     if expected != "*":
         assert expected in exact, f"exact input gave {sorted(exact)}"
         assert expected in unknown, f"unknown input gave {sorted(unknown)}"
+
+
+def test_branches_teach_the_smith_its_bits():
+    """twoDraws asserts !(first && second): with an unknown bitstring, the
+    analyser should learn that the assertion error needs bits 11."""
+    mid = next(c.experiment.entry for c in CASES if c.experiment.entry.extension.name == "twoDraws")
+    ai = AbstractInterpreter.initial(BC, mid, None)
+    with contextlib.redirect_stderr(io.StringIO()):
+        while ai.worklist:
+            ai.step()
+    [pc] = [pc for pc in ai.states if pc.method == mid and "AssertionError" in str(BC[pc])]
+    assert ai.states[pc].smith.pattern == "11"

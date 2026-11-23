@@ -4,7 +4,7 @@ from collections import deque
 from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from dataclasses import astuple
-from abstractions import Interval, AbstractSmith
+from abstractions import Interval, AbstractSmith, Drawn
 from java_literals import convert_literals, get_literals_in_method
 
 import jpamb
@@ -154,6 +154,16 @@ class State(sexpr.AsSExpr):
 SMITH_TYPE = jvm.Object(jvm.ClassName("jpamb.utils.Smith"))
 
 
+def refine(state: State, sym_id: int, new_val: Interval) -> State:
+    """Narrow a value on a branch. If the value was read from the Smith,
+    the Smith learns the bits it was read from."""
+    old = state.get_val(sym_id)
+    if isinstance(old, Drawn):
+        new_val = Drawn(new_val.min, new_val.max, old.start, old.width)
+        state = replace(state, smith=state.smith.learn(old.start, old.width, new_val))
+    return state.update_val(sym_id, new_val)
+
+
 def manystep(
     bc: jpamb.Bytecode,
     pc: PC,
@@ -176,11 +186,11 @@ def manystep(
             false_val = narrow_ifz(val, op, False)
 
             if not true_val.is_bot: #yield true branch if not bottom
-                out_t = after.update_val(sym_id, true_val)
+                out_t = refine(after, sym_id, true_val)
                 yield (pc % target, out_t)
                 
             if not false_val.is_bot: # yield false branch if not bottom
-                out_f = after.update_val(sym_id, false_val)
+                out_f = refine(after, sym_id, false_val)
                 yield (pc + 1, out_f)
         case jvm.NewArray(type=t, dim=dim):
             [size_id], after = state.pop_ids(1)
@@ -337,11 +347,11 @@ def manystep(
             f_v1, f_v2 = refine_if_bounds(v1, v2, op, is_true=False)
 
             if not t_v1.is_bot and not t_v2.is_bot:
-                out_t = after.update_val(id1, t_v1).update_val(id2, t_v2)
+                out_t = refine(refine(after, id1, t_v1), id2, t_v2)
                 yield (pc % target, out_t)
                 
             if not f_v1.is_bot and not f_v2.is_bot:
-                out_f = after.update_val(id1, f_v1).update_val(id2, f_v2)
+                out_f = refine(refine(after, id1, f_v1), id2, f_v2)
                 yield (pc + 1, out_f)
         case jvm.Binary(operant=op):
             [id1, id2], after = state.pop_ids(2)
