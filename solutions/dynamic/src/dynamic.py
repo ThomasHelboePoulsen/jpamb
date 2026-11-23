@@ -6,7 +6,7 @@ import jpamb
 import jvm
 import jvm.state as jvmc
 
-from java_literals import generate_inputs_from_dict
+from dynamic_java_literals import generate_inputs_from_dict
 from state_snapshot import state_snapshot
 
 

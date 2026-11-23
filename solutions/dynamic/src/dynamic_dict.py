@@ -6,7 +6,7 @@ import jpamb
 import jvm
 import jvm.state as jvmc
 
-from java_literals import convert_literals, get_literals_in_method
+from dynamic_java_literals import convert_literals, get_literals_in_method
 
 
 def binary(op, v1: int, v2: int) -> int | str:

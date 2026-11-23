@@ -8,7 +8,7 @@ import jpamb
 import jvm
 import jvm.state as jvmc
 
-from java_literals import (
+from dynamic_java_literals import (
     convert_literals,
     generate_inputs_from_dict,
     get_literals_in_method,
