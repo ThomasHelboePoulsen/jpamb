@@ -26,15 +26,15 @@ final class BitSmith implements Smith {
     }
 
     @Override
-    public int draw(int count) {
-        if (count < 0 || count > Integer.SIZE) {
+    public int draw(int bits) {
+        if (bits < 0) {
             throw new IllegalArgumentException(
-                "count must be between 0 and 32"
+                "bits must be non-negative"
             );
         }
 
         int value = 0;
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < bits; i++) {
             value = (value << 1) | (draw() ? 1 : 0);
         }
         return value;

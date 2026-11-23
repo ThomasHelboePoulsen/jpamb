@@ -152,25 +152,7 @@ class State(sexpr.AsSExpr):
         return replace(self, store=new_store)
 
 SMITH_TYPE = jvm.Object(jvm.ClassName("jpamb.utils.Smith"))
-# Exception types that catch Smith's IllegalStateException. None is a finally block.
-CATCHES_SMITH_EXHAUSTED = {
-    None,
-    "java/lang/IllegalStateException",
-    "java/lang/RuntimeException",
-    "java/lang/Exception",
-    "java/lang/Throwable",
-}
 
-def smith_exhausted(bc: jpamb.Bytecode, pc: PC, state: State) -> tuple[PC, State] | str:
-    """The Smith ran out of bits: jump to the catch handler, or stop with "illegal state"."""
-    method = bc.suite.findmethod(pc.method, eff=bc.eff)
-    for catch in method["code"].get("exceptions", []):
-        inside_try = catch["start"] <= pc.offset < catch["end"]
-        if inside_try and catch["catchType"] in CATCHES_SMITH_EXHAUSTED:
-            # The handler starts with only the exception object on the stack.
-            sym_id, out = replace(state, stack=()).create_val(Interval(min=1, max=None))
-            return (PC(pc.method, catch["handler"]), out.push_id(sym_id))
-    return "illegal state"
 
 def manystep(
     bc: jpamb.Bytecode,
@@ -337,13 +319,12 @@ def manystep(
                 [_], after = state.pop_ids(1)
                 n = 1
 
-            success, exhausted = after.smith.draw(n)
-            if success is not None:
-                value, smith = success
+            if n < 0:
+                yield "illegal argument"
+            elif (result := after.smith.draw(n)) is not None:
+                value, smith = result
                 sym_id, out = replace(after, smith=smith).create_val(value)
                 yield (pc + 1, out.push_id(sym_id))
-            if exhausted is not None:
-                yield smith_exhausted(bc, pc, replace(after, smith=exhausted))
         case jvm.Push(type=t,value=i):
             assert isinstance(t, jvm.StackType)
             sym_id, after = state.create_val(Interval.abstract([StackInt(i)]))
@@ -576,10 +557,8 @@ def refine_if_bounds(v1: Interval, v2: Interval, op: jvm.CmpOpr, is_true: bool) 
             if v2.max is not None: new_v1_max = min(v1.max, v2.max) if v1.max is not None else v2.max
             if v1.min is not None: new_v2_min = max(v2.min, v1.min) if v2.min is not None else v1.min
         case jvm.CmpOpr.Eq:
-            overlap_min = max(v1.min, v2.min) if v1.min is not None and v2.min is not None else (v1.min or v2.min)
-            overlap_max = min(v1.max, v2.max) if v1.max is not None and v2.max is not None else (v1.max or v2.max)
-            new_v1_min = new_v2_min = overlap_min
-            new_v1_max = new_v2_max = overlap_max
+            overlap = v1 & v2
+            return overlap, overlap
         case jvm.CmpOpr.Gt:
             if v2.min is not None: new_v1_min = max(v1.min, v2.min + 1) if v1.min is not None else (v2.min + 1)
             if v1.max is not None: new_v2_max = min(v2.max, v1.max - 1) if v2.max is not None else (v1.max - 1)
@@ -587,7 +566,8 @@ def refine_if_bounds(v1: Interval, v2: Interval, op: jvm.CmpOpr, is_true: bool) 
             if v2.min is not None: new_v1_min = max(v1.min, v2.min) if v1.min is not None else v2.min
             if v1.max is not None: new_v2_max = min(v2.max, v1.max) if v2.max is not None else v1.max
         case jvm.CmpOpr.Ne:
-            pass 
+            if v1.min is not None and v1.min == v1.max == v2.min == v2.max:
+                return Interval.bot(), Interval.bot()
 
     return Interval(new_v1_min, new_v1_max), Interval(new_v2_min, new_v2_max)
 

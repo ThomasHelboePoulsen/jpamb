@@ -10,6 +10,11 @@ from java_literals import generate_inputs_from_dict
 from state_snapshot import state_snapshot
 
 
+def signed_int(value: int) -> int:
+    value &= 0xFFFFFFFF
+    return value - 2**32 if value >= 2**31 else value
+
+
 def binary(op, v1: int, v2: int) -> int | str:
     match op:
         case jvm.BinaryOpr.Div:
@@ -19,7 +24,7 @@ def binary(op, v1: int, v2: int) -> int | str:
                 return "divide by zero"
         
         case jvm.BinaryOpr.Add:
-            return v1 + v2
+            return signed_int(v1 + v2)
         case jvm.BinaryOpr.Sub:
             return v1 - v2
         case jvm.BinaryOpr.Mul:
@@ -73,7 +78,7 @@ def draw_bit(state: jvmc.State, ref: jvmc.StackReference) -> bool:
 
 
 def draw_int(state: jvmc.State, ref: jvmc.StackReference, count: int) -> int | str:
-    if not 0 <= count <= 32:
+    if count < 0:
         return "illegal argument"
     smith = state.heap[ref]
     bits_field = jvm.FieldID("bits", jvm.Object(jvm.ClassName("java.lang.String")))
@@ -81,15 +86,15 @@ def draw_int(state: jvmc.State, ref: jvmc.StackReference, count: int) -> int | s
     bits_ref = smith.fields[bits_field]
     index = smith.fields[index_field].value
     bits = state.heap[bits_ref].content
-    value = 0
-    for bit in bits[index:index + count].ljust(count, "0"):
-        value = value * 2 + int(bit)
-    smith.fields[index_field] = jvmc.StackInt(min(index + count, len(bits)))
-    # Keep the result in Java's int range: -2**31 to 2**31 - 1.
-    value = value % (2**32)
-    if value >= 2**31:
-        value -= 2**32
-    return value
+    end = index + count
+    cursor = min(end, len(bits))
+    smith.fields[index_field] = jvmc.StackInt(cursor)
+
+    # Only the last 32 bits contribute, even when the draw pads with zeros.
+    suffix = bits[max(index, end - 32):cursor]
+    if not suffix:
+        return 0
+    return signed_int(int(suffix, 2) << (end - cursor))
 
 
 def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | str]:
@@ -373,6 +378,17 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                     assert method.extension.params == [jvm.Boolean()]
                     assert method.extension.return_type is jvm.Void()
                     frame.pc += 1
+                elif method.encode() == "java.lang.String.charAt:(I)C":
+                    string = state.heap[ref]
+                    assert isinstance(string, jvmc.HeapString)
+                    encoded = string.content.encode("utf-16-le", errors="surrogatepass")
+                    offset = args[0] * 2
+                    if not 0 <= offset < len(encoded):
+                        output = "out of bounds"
+                    else:
+                        code_unit = int.from_bytes(encoded[offset : offset + 2], "little")
+                        frame.stack.push(jvmc.StackInt(code_unit))
+                        frame.pc += 1
                 elif method.extension.name == "equals":
                     assert len(method.extension.params) == 1
                     assert isinstance(method.extension.params[0], jvm.Object)

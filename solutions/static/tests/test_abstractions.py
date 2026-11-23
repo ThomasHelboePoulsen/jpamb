@@ -228,38 +228,37 @@ def test_smith_is_galoi(a, b):
     ab.is_galoi(a, b)
 
 
-def concrete_draw(bits: str, index: int, n: int) -> int | None:
-    """What Java BitSmith.draw(n) returns, or None when the bits run out."""
-    if index + n > len(bits):
-        return None
-    value = int(bits[index : index + n] or "0", 2)
+def concrete_draw(bits: str, index: int, n: int) -> int:
+    padded = bits[index : index + n].ljust(n, "0")
+    value = int(padded[-32:] or "0", 2)
     return value - 2**32 if value >= 2**31 else value
 
 
-@given(st_concrete(), st.integers(min_value=0, max_value=6), st_smith())
+@given(st_concrete(), st.integers(min_value=0, max_value=40), st_smith())
 def test_smith_draw_is_sound(concrete, n, other):
     bits, index = concrete
     smith = ab.AbstractSmith.abstract([concrete]) | other
-    success, exhausted = smith.draw(n)
-    value = concrete_draw(bits, index, n)
-    if value is None:
-        assert exhausted is not None and concrete in exhausted
-    else:
-        result, after = success
-        assert value in result
-        assert (bits, index + n) in after
+    result, after = smith.draw(n)
+    assert concrete_draw(bits, index, n) in result
+    assert (bits, min(index + n, len(bits))) in after
 
 
 def test_smith_draw_examples():
     smith = ab.AbstractSmith.from_bits("01")
-    (value, smith), exhausted = smith.draw(1)
-    assert value == ab.Interval(0, 0) and exhausted is None
-    (value, smith), _ = smith.draw(1)
+    value, smith = smith.draw(1)
+    assert value == ab.Interval(0, 0)
+    value, smith = smith.draw(1)
     assert value == ab.Interval(1, 1)
-    success, exhausted = smith.draw(1)
-    assert success is None and exhausted is not None
+    value, after = smith.draw(1)
+    assert value == ab.Interval(0, 0)
+    assert after == smith
 
-    (value, after), exhausted = ab.AbstractSmith.unknown().draw(4)
+    value, after = ab.AbstractSmith.unknown().draw(4)
     assert value == ab.Interval(0, 15)
-    assert after.length == ab.Interval(4, None)
-    assert exhausted.length == ab.Interval(0, 3)
+    assert after.length == ab.Interval(0, None)
+    assert after.cursor == ab.Interval(0, 4)
+
+    smith = ab.AbstractSmith.from_bits("1" + "0" * 32 + "11")
+    value, after = smith.draw(34)
+    assert value == ab.Interval(1, 1)
+    assert ("1" + "0" * 32 + "11", 34) in after

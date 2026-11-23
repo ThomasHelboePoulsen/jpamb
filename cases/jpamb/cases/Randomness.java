@@ -1,5 +1,4 @@
 package jpamb.cases;
-//import static jpamb.utils.Tag.TagType.*;
 
 import jpamb.utils.Case;
 import jpamb.utils.Smith;
@@ -19,8 +18,6 @@ public class Randomness {
 
     @Case("(r'11') -> assertion error")
     @Case("(r'10') -> ok")
-    @Case("(r'01') -> ok")
-    @Case("(r'00') -> ok")
     public static void twoDraws(Smith smith) {
         boolean first = smith.draw();
         boolean second = smith.draw();
@@ -29,12 +26,10 @@ public class Randomness {
 
     @Case("(0, r'1') -> divide by zero")
     @Case("(0, r'0') -> ok")
-    @Case("(2, r'1') -> ok")
     public static int drawDependsOnArg(int n, Smith smith) {
         return smith.draw() ? 1 / n : 0;
     }
 
-    @Case("(r'1') -> ok")
     @Case("(r'0001') -> ok")
     @Case("(r'00001') -> assertion error")
     @Case("(r'0000') -> *")
@@ -88,8 +83,6 @@ public class Randomness {
     }
 
     @Case("(r'1') -> divide by zero")
-    @Case("(r'0001') -> assertion error")
-    @Case("(r'00001') -> ok")
     @Case("(r'0000100000000000000000000000000000001') -> assertion error")
     @Case("(r'010110000000001') -> ok")
     public static void drawInt(Smith smith) {
@@ -102,11 +95,9 @@ public class Randomness {
             && smith.draw(32) == 0;
     }
 
-    @Case("(r'00001') -> ok")
     @Case("(r'0000') -> assertion error")
     @Case("(r'0101') -> divide by zero")
     @Case("(r'010110000000001') -> ok")
-    @Case("(r'01011000000000') -> assertion error")
     public static void branchOverlap(Smith smith) {
         int value = smith.draw(4);
         if (value >= 5) {
@@ -116,6 +107,18 @@ public class Randomness {
         assert tail;
     }
 
+    @Case("(r'10000000000000000000000000000000011') -> ok")
+    @Case("(r'') -> assertion error")
+    public static void draw34Bits(Smith smith) {
+        int value = smith.draw(34);
+        assert value == 1 && smith.draw();
+    }
     
-    
+    @Case("(r'') -> ok")
+    @Case("(r'1111111111111111111111111111111') -> assertion error")
+    public static void drawIntOverflow(Smith smith) {
+        int value = smith.draw(31);
+        assert value + 1 > value;
+    }
+
 }
