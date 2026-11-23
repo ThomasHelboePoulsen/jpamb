@@ -309,6 +309,22 @@ def manystep(
             if not (recv.min == 0 and recv.max == 0):
                 sym_id, after = after.create_val(Interval(min=0, max=None))
                 yield (pc + 1, after.push_id(sym_id))
+        case jvm.InvokeVirtual(method=m) if (
+            m.extension.name == "charAt"
+            and len(m.extension.params) == 1
+            and isinstance(m.extension.params[0], jvm.Int)
+            and m.extension.return_type == jvm.Char()
+        ):
+            [recv_id, idx_id], after = state.pop_ids(2)
+            recv = after.get_val(recv_id)
+            idx = after.get_val(idx_id)
+            if StackInt(0) in recv: yield "null pointer"
+            if not (recv.min == 0 and recv.max == 0):
+                if idx.min is not None and idx.max is not None:
+                    if idx.min < 0:
+                        yield "out of bounds"
+                sym_id, after = after.create_val(Interval(min=0, max=65535))
+                yield (pc + 1, after.push_id(sym_id))
         case jvm.InvokeInterface(method=m) if m.extension.name == "draw":
             # draw() reads 1 bit. draw(n) reads n bits; n is on top of the stack.
             if m.extension.params:
@@ -354,6 +370,14 @@ def manystep(
             res, errors = Interval.arithmetic(v1, v2, op)
             for err in errors: yield err
             
+            if not res.is_bot:
+                sym_id, after = after.create_val(res)
+                yield (pc + 1, after.push_id(sym_id))
+        case jvm.Bitopr(type=jvm.Int(), operant=op):
+            [id1, id2], after = state.pop_ids(2)
+            v1, v2 = after.get_val(id1), after.get_val(id2)
+
+            res = v1.bitwise(v2, op)
             if not res.is_bot:
                 sym_id, after = after.create_val(res)
                 yield (pc + 1, after.push_id(sym_id))

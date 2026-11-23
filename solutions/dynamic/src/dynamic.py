@@ -383,6 +383,19 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                     right = None if other == 0 else state.heap[jvmc.StackReference(other)]
                     frame.stack.push(jvmc.StackInt(1 if left == right else 0))
                     frame.pc += 1
+                elif method.extension.name == "charAt":
+                    assert len(method.extension.params) == 1
+                    assert isinstance(method.extension.params[0], jvm.Int)
+                    assert isinstance(method.extension.return_type, jvm.Char)
+
+                    string = state.heap[ref]
+                    assert isinstance(string, jvmc.HeapString)
+                    index = args[0]
+                    if not 0 <= index < len(string.content):
+                        output = "out of bounds"
+                    else:
+                        frame.stack.push(jvmc.StackInt(ord(string.content[index])))
+                        frame.pc += 1
                 else:
                     raise NotImplementedError(
                         f"Unsupported virtual method: {method.extension.name}"

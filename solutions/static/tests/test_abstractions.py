@@ -164,6 +164,37 @@ def test_interval_abstraction_rem(xs,ys):
   r = ab.Interval.abstract(xs) % ab.Interval.abstract(ys)
   assert all(x % y in r for x in xs for y in ys if y != 0)
 
+
+def bitwise(opr, x, y):
+    if opr == jvm.BitOpr.Shl:
+        result = (x << (y & 0b11111)) & 0xFFFFFFFF
+        return result if result < 2**31 else result - 2**32
+    if opr == jvm.BitOpr.Shr:
+        return x >> (y & 0b11111)
+    if opr == jvm.BitOpr.Ushr:
+        result = (x & 0xFFFFFFFF) >> (y & 0b11111)
+        return result if result < 2**31 else result - 2**32
+    if opr == jvm.BitOpr.And:
+        return x & y
+    if opr == jvm.BitOpr.Or:
+        return x | y
+    if opr == jvm.BitOpr.Xor:
+        return x ^ y
+    raise NotImplementedError(opr)
+
+
+@given(
+    st.sampled_from(list(jvm.BitOpr)),
+    st.sets(st.integers(min_value=-100, max_value=100)),
+    st.sets(st.integers(min_value=-100, max_value=100)),
+)
+def test_interval_bitwise_is_sound(opr, xs, ys):
+    if not xs or not ys:
+        return
+    real = {bitwise(opr, x, y) for x in xs for y in ys}
+    abstracted = ab.Interval.abstract(xs).bitwise(ab.Interval.abstract(ys), opr)
+    assert all(result in abstracted for result in real)
+
 def st_interval():
     # Lengths and cursors are never negative, so min is always a number >= 0.
     low = st.integers(min_value=0, max_value=6)

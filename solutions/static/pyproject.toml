@@ -11,6 +11,8 @@ requires-python = ">=3.13"
 dependencies = [
   "hypothesis>=6.168.2",
   "jpamb",
+  "tree-sitter>=0.26.0",
+  "tree-sitter-java>=0.23.5",
 ]
 
 

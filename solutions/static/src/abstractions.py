@@ -626,6 +626,55 @@ class Interval(Abstraction, Lattice):
                 raise NotImplementedError(f"Unsupported operation: {opr}")
                 
         return res, errors
+    def bitwise(self, other: "Interval", opr: jvm.BitOpr) -> "Interval":
+        if self.is_bot:
+            return self
+        if other.is_bot:
+            return other
+
+        INT_MIN = -(2**31)
+        INT_MAX = 2**31 - 1
+        INT_MASK = 2**32 - 1
+
+        def signed32(value: int) -> int:
+            value &= INT_MASK
+            return value if value < 2**31 else value - 2**32
+
+        if (
+            self.min is None or self.max is None
+            or other.min is None or other.max is None
+        ):
+            return Interval(min=INT_MIN, max=INT_MAX)
+
+        left_values = range(self.min, self.max + 1)
+        right_values = range(other.min, other.max + 1)
+        left_count = self.max - self.min + 1
+        right_count = other.max - other.min + 1
+        if left_count * right_count > 65536:
+            return Interval(min=INT_MIN, max=INT_MAX)
+
+        results = set()
+        for left in left_values:
+            for right in right_values:
+                match opr:
+                    case jvm.BitOpr.Shl:
+                        results.add(signed32(left << (right & 0b11111)))
+                    case jvm.BitOpr.Shr:
+                        results.add(signed32(left >> (right & 0b11111)))
+                    case jvm.BitOpr.Ushr:
+                        results.add(signed32((left & INT_MASK) >> (right & 0b11111)))
+                    case jvm.BitOpr.And:
+                        results.add(signed32(left & right))
+                    case jvm.BitOpr.Or:
+                        results.add(signed32(left | right))
+                    case jvm.BitOpr.Xor:
+                        results.add(signed32(left ^ right))
+                    case _:
+                        raise NotImplementedError(f"Unsupported operation: {opr}")
+
+        if not results:
+            return Interval.bot()
+        return Interval(min=min(results), max=max(results))
     def compare(self, other: "Interval", opr: jvm.CmpOpr) -> Iterable[bool]:
         if self.is_bot or other.is_bot:
             return []

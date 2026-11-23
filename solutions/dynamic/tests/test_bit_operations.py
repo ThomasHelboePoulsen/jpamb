@@ -45,3 +45,43 @@ def test_unsigned_right_shift(value, shift, expected):
     assert executed_pc == pc
     assert frame.pc == pc + 1
     assert list(frame.stack.operands) == [jvmc.StackInt(123), jvmc.StackInt(expected)]
+
+
+@pytest.mark.parametrize(
+    "content,index,expected",
+    [
+        ("1001", 0, ord("1")),
+        ("1001", 3, ord("1")),
+        ("1001", 4, None),
+        ("1001", -1, None),
+    ],
+)
+def test_string_char_at(content, index, expected):
+    method = jvm.AbsMethodID.decode("example.Test.run:()V")
+    pc = jvmc.PC(method, 0)
+    frame = jvmc.Frame(
+        jvmc.Locals([]),
+        jvmc.OperandStack.from_values([]),
+        pc,
+    )
+    state = jvmc.State(jvmc.Heap(), jvmc.CallStack.from_frames([frame]))
+    string_ref = state.heap.new(jvmc.HeapString(content))
+    frame.stack.push(string_ref)
+    frame.stack.push(jvmc.StackInt(index))
+    bytecode = {
+        pc: jvm.InvokeVirtual(
+            offset=0,
+            method=jvm.AbsMethodID.decode("java.lang.String.charAt:(I)C"),
+        )
+    }
+
+    executed_pc, result = step(bytecode, state)
+
+    assert executed_pc == pc
+    if expected is None:
+        assert result == "out of bounds"
+        assert frame.pc == pc
+    else:
+        assert result is state
+        assert frame.pc == pc + 1
+        assert list(frame.stack.operands) == [jvmc.StackInt(expected)]
