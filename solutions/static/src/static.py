@@ -1,8 +1,10 @@
+import contextlib
 import heapq
+import io
 import sys
 from collections import deque
 from collections.abc import Iterable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from dataclasses import astuple
 from abstractions import Interval, AbstractSmith, Drawn
 from java_literals import convert_literals, get_literals_in_method
@@ -447,6 +449,8 @@ class AbstractInterpreter:
     worklist: list[PC]
     states: dict[PC, State]
     k_set: list[int]
+    # outcome -> {pc where it is raised: Smith state there}
+    outcome_smiths: dict[str, dict[PC, AbstractSmith]] = field(default_factory=dict)
 
     @staticmethod
     def initial(bc: jpamb.Bytecode, methodid: jvm.AbsMethodID, inputs):
@@ -469,6 +473,8 @@ class AbstractInterpreter:
         for res in manystep(self.bc, pc, self.states[pc]):
             if isinstance(res, str):
                 finals.add(res)
+                # states only grow, so the latest Smith at this pc covers the earlier ones
+                self.outcome_smiths.setdefault(res, {})[pc] = self.states[pc].smith
             else:
                 pc_, st = res
 
@@ -615,6 +621,28 @@ def interpret():
     if not all_finals: # 
         jpamb.emit_step(x, last_pc, "*", depth=1)
 
+def abstract_analysis_results(
+    bc: jpamb.Bytecode,
+    methodid: jvm.AbsMethodID,
+    inputs: jpamb.Input | None = None,
+    steps: int = 300,
+) -> dict[str, list[AbstractSmith]]:
+    """Run the static analysis on one method and return, for each outcome it
+    can reach ("ok", "divide by zero", ...), the Smith states that lead there
+    (pattern, length, cursor): one per place in the code that raises the
+    outcome. Paths that meet before that place are joined into one Smith.
+
+    inputs=None analyses every input, including every bitstring.
+    The Smith is bottom for methods that take no Smith.
+    """
+    ai = AbstractInterpreter.initial(bc, methodid, inputs)
+    with contextlib.redirect_stderr(io.StringIO()):  # hide the step trace
+        while steps > 0 and ai.worklist:
+            ai.step()
+            steps -= 1
+    return {outcome: list(at.values()) for outcome, at in ai.outcome_smiths.items()}
+
+
 def analyse():
     """The static analysis"""
 
@@ -639,6 +667,10 @@ def analyse():
         final |= finals
         steps -= 1
     is_incomplete = len(ai.worklist) > 0 or "ok" not in final
+    for outcome, at in sorted(ai.outcome_smiths.items()):
+        for smith in at.values():
+            if not smith.is_bot:
+                print(f"{outcome}: {smith}", file=sys.stderr)
     
     for f in jpamb.QUERIES:
         if f in final:

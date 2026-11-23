@@ -12,7 +12,8 @@ from pathlib import Path
 import pytest
 
 import jpamb
-from static import AbstractInterpreter
+from abstractions import Interval
+from static import AbstractInterpreter, abstract_analysis_results
 
 ROOT = Path(__file__).resolve().parents[3]
 SUITE = jpamb.Suite.from_workdir(ROOT)
@@ -66,3 +67,13 @@ def test_branches_teach_the_smith_its_bits():
             ai.step()
     [pc] = [pc for pc in ai.states if pc.method == mid and "AssertionError" in str(BC[pc])]
     assert ai.states[pc].smith.pattern == "11"
+
+
+def test_abstract_analysis_results():
+    mid = next(c.experiment.entry for c in CASES if c.experiment.entry.extension.name == "twoDraws")
+    outcomes = abstract_analysis_results(BC, mid)
+    assert set(outcomes) == {"ok", "assertion error"}
+    [error] = outcomes["assertion error"]
+    assert error.pattern == "11" and error.length == Interval(2, None)
+    [ok] = outcomes["ok"]
+    assert ok.pattern == ""
