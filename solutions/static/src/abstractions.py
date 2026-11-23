@@ -757,6 +757,15 @@ class Interval(Abstraction, Lattice):
         return Interval(min=new_min, max=new_max)
 
 
+@dataclass(frozen=True, eq=False)
+class Drawn(Interval):
+    """An Interval read straight from the Smith: bits [start, start + width).
+    When a branch narrows the value, the Smith can learn those bits."""
+
+    start: int = 0
+    width: int = 0
+
+
 @dataclass(frozen=True)
 class AbstractSmith(Abstraction, Lattice):
     """Abstract Smith: a set of possible bitstrings plus how many bits are read.
@@ -764,7 +773,9 @@ class AbstractSmith(Abstraction, Lattice):
     pattern: one char per position, '0', '1' or '?' (unknown).
              Positions past the end of the pattern are '?'.
     length:  possible lengths of the bitstring.
-    cursor:  possible number of bits read so far.
+    cursor:  possible number of bits asked for so far. Bits past the end
+             read as 0 wherever they are, so the cursor may run past the
+             end; Java's real index is min(cursor, length).
     """
 
     pattern: str
@@ -779,7 +790,9 @@ class AbstractSmith(Abstraction, Lattice):
             object.__setattr__(self, "length", Interval.bot())
             object.__setattr__(self, "cursor", Interval.bot())
         else:
-            object.__setattr__(self, "pattern", self.pattern.rstrip("?"))
+            # bits past the longest possible end never matter
+            pattern = self.pattern if self.length.max is None else self.pattern[: self.length.max]
+            object.__setattr__(self, "pattern", pattern.rstrip("?"))
 
     def __str__(self):
         return f"smith({self.pattern or '?'}, len={self.length}, at={self.cursor})"
@@ -828,8 +841,10 @@ class AbstractSmith(Abstraction, Lattice):
         bits, index = value
         return (
             len(bits) in self.length
-            and index in self.cursor
             and index <= len(bits)
+            # the real index is min(cursor, len(bits)) for some cursor value
+            and (index in self.cursor if index < len(bits)
+                 else self.cursor.max is None or self.cursor.max >= index)
             and all(p == "?" or k >= len(bits) or bits[k] == p for k, p in enumerate(self.pattern))
         )
 
@@ -890,15 +905,50 @@ class AbstractSmith(Abstraction, Lattice):
     # --- the abstract draw ---
 
     def draw(self, n: int) -> tuple[Interval, "AbstractSmith"] | None:
-        """Read with zero padding, advancing the cursor only over available bits."""
+        """Read n bits with zero padding. The cursor always moves n forward:
+        past the end every bit is 0, so it does not matter that Java's index
+        stops at the end, and an exact cursor stays exact."""
         if self.is_bot:
             return None
-        end = self.cursor + Interval(n, n)
-        lower = min(end.min, self.length.min) if end.min is not None and self.length.min is not None else None
-        finite_upper_bounds = [bound for bound in (end.max, self.length.max) if bound is not None]
-        upper = min(finite_upper_bounds, default=None)
-        after = AbstractSmith(self.pattern, self.length, Interval(lower, upper))
-        return self.read(self.cursor, n), after
+        value = self.read(self.cursor, n)
+        if self.cursor.min == self.cursor.max and n < 32:
+            value = Drawn(value.min, value.max, self.cursor.min, n)
+        return value, AbstractSmith(self.pattern, self.length, self.cursor + Interval(n, n))
+
+    def learn(self, start: int, width: int, value: Interval) -> "AbstractSmith":
+        """A branch narrowed the value read from bits [start, start + width)
+        to `value`. Keep only the bitstrings that agree: the bits shared by
+        every number in the range become known.
+
+        Missing bits read as 0, so a learned 1 means the bitstring really is
+        that long, and a learned 0 where the pattern says 1 means the
+        bitstring ended before that bit.
+        """
+        if self.is_bot or value.is_bot:
+            return AbstractSmith.bot()
+        if width >= 32:  # ponytail: signed 32-bit reads learn nothing; split the range by sign if needed
+            return self
+        lo = 0 if value.min is None else max(value.min, 0)
+        hi = 2**width - 1 if value.max is None else min(value.max, 2**width - 1)
+        if lo > hi:
+            return AbstractSmith.bot()
+
+        pattern = list(self.pattern.ljust(start + width, "?"))
+        length = self.length
+        for shift in reversed(range(width)):
+            if lo >> shift != hi >> shift:
+                break  # the numbers in the range differ from this bit on
+            k = start + width - 1 - shift
+            if (lo >> shift) & 1:
+                if pattern[k] == "0":
+                    return AbstractSmith.bot()
+                pattern[k] = "1"
+                length = length & Interval(k + 1, None)
+            elif pattern[k] == "1":
+                length = length & Interval(None, k)
+            else:
+                pattern[k] = "0"
+        return AbstractSmith("".join(pattern), length, self.cursor)
 
     def read(self, cursor: Interval, n: int) -> Interval:
         """Bound the signed Java int formed by the last 32 bits of the draw."""
