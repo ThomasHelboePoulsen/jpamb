@@ -880,46 +880,35 @@ class AbstractSmith(Abstraction, Lattice):
 
     # --- the abstract draw ---
 
-    def draw(self, n: int) -> tuple[tuple[Interval, "AbstractSmith"] | None, "AbstractSmith | None"]:
+    def draw(self, n: int) -> tuple[Interval, "AbstractSmith"] | None:
         """Abstract Smith.draw(n). draw() is draw(1).
 
-        Returns (success, exhausted):
-          success:   (value, smith after the read), or None if the read can never succeed.
-          exhausted: smith when the bits run out, or None if that can never happen.
+        Like Java BitSmith, a draw never fails: bits past the end of the
+        bitstring read as 0, and the index stops at the end.
+        Returns (value, smith after the read), or None for the bottom smith.
         """
         assert 0 <= n <= 32, "count must be between 0 and 32"
         if self.is_bot:
-            return None, None
-        step = Interval(n, n)
-        end = self.cursor + step
+            return None
+        value = self.read(self.cursor, n)
+        lo = min(self.cursor.min + n, self.length.min)
+        hi = None if self.cursor.max is None else self.cursor.max + n
+        if hi is not None and self.length.max is not None:
+            hi = min(hi, self.length.max)
+        return value, AbstractSmith(self.pattern, self.length, Interval(lo, hi))
 
-        # Success needs cursor + n <= length.
-        length = self.length & Interval(end.min, None)
-        cursor = self.cursor
-        if length.max is not None:
-            cursor = cursor & Interval(None, length.max - n)
-        success = None
-        if not (length.is_bot or cursor.is_bot):
-            after = AbstractSmith(self.pattern, length, cursor + step)
-            success = (self.read(cursor, n), after)
-
-        # Exhaustion needs cursor + n > length.
-        length = self.length
-        if end.max is not None:
-            length = length & Interval(None, end.max - 1)
-        cursor = self.cursor
-        if self.length.min is not None:
-            cursor = cursor & Interval(self.length.min - n + 1, None)
-        exhausted = None
-        if not (length.is_bot or cursor.is_bot):
-            exhausted = AbstractSmith(self.pattern, length, cursor)
-
-        return success, exhausted
+    def padded_bit(self, k: int) -> str:
+        """Bit k as Java reads it: past the end of the bitstring it is 0."""
+        if self.length.max is not None and k >= self.length.max:
+            return "0"  # past the end for every possible length
+        if k < self.length.min:
+            return self.bit(k)  # inside the string for every possible length
+        return "0" if self.bit(k) == "0" else "?"  # 0 or the real bit, depending on the length
 
     def read(self, cursor: Interval, n: int) -> Interval:
         """Possible values of n bits read from position cursor."""
         if cursor.min is not None and cursor.min == cursor.max:
-            bits = [self.bit(cursor.min + k) for k in range(n)]
+            bits = [self.padded_bit(cursor.min + k) for k in range(n)]
             if "?" not in bits:
                 value = int("".join(bits), 2) if bits else 0
                 if value >= 2**31:  # Java int overflow: bit 31 is the sign
