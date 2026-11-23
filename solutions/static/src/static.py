@@ -449,7 +449,8 @@ class AbstractInterpreter:
     worklist: list[PC]
     states: dict[PC, State]
     k_set: list[int]
-    # outcome -> {pc where it is raised: Smith state there}
+    # outcome -> {pc where it is raised: Smith state there}.
+    # "*" (may run forever) is keyed by loop head: the target of a backward jump.
     outcome_smiths: dict[str, dict[PC, AbstractSmith]] = field(default_factory=dict)
 
     @staticmethod
@@ -476,21 +477,24 @@ class AbstractInterpreter:
                 # states only grow, so the latest Smith at this pc covers the earlier ones
                 self.outcome_smiths.setdefault(res, {})[pc] = self.states[pc].smith
             else:
-                pc_, st = res
+                next_pc, next_state = res
+                backward = next_pc.method == pc.method and next_pc.offset <= pc.offset
 
-                before = self.states.get(pc_, None)
+                before = self.states.get(next_pc, None)
                 if before is None:
-                    after = st
+                    after = next_state
                 else:
-                    joined = before | st
-                    if pc_.method == pc.method and pc_.offset <= pc.offset:
+                    joined = before | next_state
+                    if backward:
                         after = before.widen(joined, self.k_set)
                     else:
                         after = joined
                     
                 if before is None or after != before:
-                    self.states[pc_] = after
-                    self.worklist.append(pc_)
+                    self.states[next_pc] = after
+                    self.worklist.append(next_pc)
+                if backward:  # a reachable loop: it may run forever from its head
+                    self.outcome_smiths.setdefault("*", {})[next_pc] = self.states[next_pc].smith
 
         return pc, finals
 
@@ -625,21 +629,23 @@ def abstract_analysis_results(
     bc: jpamb.Bytecode,
     methodid: jvm.AbsMethodID,
     inputs: jpamb.Input | None = None,
-    steps: int = 300,
 ) -> dict[str, list[AbstractSmith]]:
     """Run the static analysis on one method and return, for each outcome it
     can reach ("ok", "divide by zero", ...), the Smith states that lead there
     (pattern, length, cursor): one per place in the code that raises the
     outcome. Paths that meet before that place are joined into one Smith.
 
+    "*" (may run forever) lists the Smith at each reachable loop head.
+    A missing outcome cannot happen; if "*" is the only key, the method
+    can only run forever. analyse() answers the queries from this dict.
+
     inputs=None analyses every input, including every bitstring.
     The Smith is bottom for methods that take no Smith.
     """
     ai = AbstractInterpreter.initial(bc, methodid, inputs)
     with contextlib.redirect_stderr(io.StringIO()):  # hide the step trace
-        while steps > 0 and ai.worklist:
+        while ai.worklist:  # widening makes this reach a fixed point
             ai.step()
-            steps -= 1
     return {outcome: list(at.values()) for outcome, at in ai.outcome_smiths.items()}
 
 
@@ -657,26 +663,28 @@ def analyse():
     suite, eff = jpamb.setup()
     bc = jpamb.Bytecode(suite, eff, {})
 
-    steps = 300
-
-    ai = AbstractInterpreter.initial(bc, methodid, None)
-
-    final = set()
-    while steps > 0 and ai.worklist:
-        _pc, finals = ai.step()
-        final |= finals
-        steps -= 1
-    is_incomplete = len(ai.worklist) > 0 or "ok" not in final
-    for outcome, at in sorted(ai.outcome_smiths.items()):
-        for smith in at.values():
+    results = abstract_analysis_results(bc, methodid)
+    for outcome, smiths in sorted(results.items()):
+        for smith in smiths:
             if not smith.is_bot:
                 print(f"{outcome}: {smith}", file=sys.stderr)
-    
-    for f in jpamb.QUERIES:
-        if f in final:
-            print(f"{f};maybe") 
-        elif is_incomplete:
-            print(f"{f};maybe")  
-        else:
-            print(f"{f};no")
-   
+    for query in jpamb.QUERIES:
+        print(f"{query};{answer(query, results)}")
+
+
+def answer(query: str, results: dict[str, list[AbstractSmith]]) -> str:
+    """Answer one jpamb query from the analysis results.
+
+    Nothing but "*" reachable: the method can only run forever.
+    Otherwise a reachable outcome (or loop, for "*") is "maybe" and a
+    missing one is "no", except that when "ok" is not reachable every
+    query except "*" stays "maybe", as a safety net.
+    """
+    reachable = set(results) - {"*"}
+    if not reachable:
+        return "yes" if query == "*" else "no"
+    if query in results:
+        return "maybe"
+    if query != "*" and "ok" not in results:
+        return "maybe"
+    return "no"

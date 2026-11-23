@@ -13,7 +13,7 @@ import pytest
 
 import jpamb
 from abstractions import Interval
-from static import AbstractInterpreter, abstract_analysis_results
+from static import AbstractInterpreter, abstract_analysis_results, answer
 
 ROOT = Path(__file__).resolve().parents[3]
 SUITE = jpamb.Suite.from_workdir(ROOT)
@@ -77,3 +77,26 @@ def test_abstract_analysis_results():
     assert error.pattern == "11" and error.length == Interval(2, None)
     [ok] = outcomes["ok"]
     assert ok.pattern == ""
+
+
+@pytest.mark.parametrize(
+    "method, expected",
+    [
+        ("Loops.forever", "yes"),  # no outcome reachable at all
+        ("Loops.neverAsserts", "yes"),
+        ("Randomness.loopUntilHeads", "maybe"),  # loop that can run forever
+        ("Randomness.spinOnTails", "maybe"),
+        ("Randomness.twoDraws", "no"),  # no loop: always stops
+    ],
+)
+def test_star_answer(method, expected):
+    mid = next(c.experiment.entry for c in SUITE.cases(eff=EFF) if f"cases.{method}:" in str(c.experiment.entry))
+    assert answer("*", abstract_analysis_results(BC, mid)) == expected
+
+
+def test_loop_heads_are_in_the_results():
+    mid = next(c.experiment.entry for c in CASES if c.experiment.entry.extension.name == "loopUntilHeads")
+    results = abstract_analysis_results(BC, mid)
+    assert len(results["*"]) == 1  # one loop
+    assert "*" not in abstract_analysis_results(BC, next(
+        c.experiment.entry for c in CASES if c.experiment.entry.extension.name == "twoDraws"))
