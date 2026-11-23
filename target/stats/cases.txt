@@ -113,3 +113,10 @@ jpamb.cases.Strings.sayHello:(Ljava/lang/String;)V           (s'hello') -> ok
 jpamb.cases.Strings.sayHello:(Ljava/lang/String;)V           (s'not hello') -> assertion error
 jpamb.cases.Tricky.collatz:(I)V                              (0) -> assertion error
 jpamb.cases.Tricky.collatz:(I)V                              (24) -> ok
+jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V (r'000001001010') -> ok
+jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V (r'000001011010') -> assertion error
+jpamb.cases.Tricky.randomContradictoryBranches:(Ljpamb/utils/Smith;)V (r'000001011010') -> ok
+jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V (r'000000000000') -> ok
+jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V (r'000001011010') -> assertion error
+jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V (r'000000000000') -> ok
+jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V (r'010110100000') -> assertion error

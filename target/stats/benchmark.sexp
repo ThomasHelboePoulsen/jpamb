@@ -964,6 +964,68 @@
     )
     :results (ok)
   )
+  :"jpamb.cases.Tricky.randomCompatibleBranches!(r'000001001010')V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12 13 20)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.Tricky.randomCompatibleBranches!(r'000001011010')V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.Tricky.randomContradictoryBranches!(r'000001011010')V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomContradictoryBranches:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12 13 20)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.Tricky.randomMaskedBranch!(r'000000000000')V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 15)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.Tricky.randomMaskedBranch!(r'000001011010')V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11)
+      )
+    )
+    :results ("assertion error")
+  )
+  :"jpamb.cases.Tricky.randomShiftedBranch!(r'000000000000')V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 12)
+      )
+      :"jpamb.cases.Tricky.shiftedByte:(I)I" (coverage
+        :reachable (0 1 2 3 4 5)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.Tricky.randomShiftedBranch!(r'010110100000')V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8)
+      )
+      :"jpamb.cases.Tricky.shiftedByte:(I)I" (coverage
+        :reachable (0 1 2 3 4 5)
+      )
+    )
+    :results ("assertion error")
+  )
   :"jpamb.cases.Arrays.arrayContent:()V" (control
     :coverage (
       :"jpamb.cases.Arrays.arrayContent:()V" (coverage
@@ -1534,6 +1596,41 @@
     :coverage (
       :"jpamb.cases.Tricky.collatz:(I)V" (coverage
         :reachable (0 1 2 3 4 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26)
+      )
+    )
+    :results ("assertion error" ok)
+  )
+  :"jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 20)
+      )
+    )
+    :results ("assertion error" ok)
+  )
+  :"jpamb.cases.Tricky.randomContradictoryBranches:(Ljpamb/utils/Smith;)V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomContradictoryBranches:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 12 13 20)
+      )
+    )
+    :results (ok)
+  )
+  :"jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 9 10 11 15)
+      )
+    )
+    :results ("assertion error" ok)
+  )
+  :"jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V" (control
+    :coverage (
+      :"jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V" (coverage
+        :reachable (0 1 2 3 4 5 6 7 8 12)
+      )
+      :"jpamb.cases.Tricky.shiftedByte:(I)I" (coverage
+        :reachable (0 1 2 3 4 5)
       )
     )
     :results ("assertion error" ok)

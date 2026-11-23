@@ -139,6 +139,13 @@ def convert_literals(raw_literals: dict[str, list[bytes]]) -> dict[type, list]:
             text = raw_value.decode("utf-8")
             if category == "decimal_integer_literal":
                 value = int(text)
+            elif category == "hex_integer_literal":
+                is_long = text.endswith(("l", "L"))
+                width = 64 if is_long else 32
+                digits = text[2:-1] if is_long else text[2:]
+                value = int(digits, 16)
+                if value >= 1 << (width - 1):
+                    value -= 1 << width
             elif category in {"string_literal", "character_literal"}:
                 if text.startswith('"""') or "\\" in text:
                     raise NotImplementedError("Escaped literals and text blocks are not supported")
