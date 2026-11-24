@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
   "jpamb",
+  "static",
   "tree-sitter>=0.26.0",
   "tree-sitter-java>=0.23.5",
 ]
@@ -23,6 +24,7 @@ dynamic-coverage-analysis = "dynamic_coverage:analyse"
 
 [tool.uv.sources]
 jpamb = { path = "../../", editable = true }
+static = { path = "../static", editable = true }
 
 [dependency-groups]
 dev = [

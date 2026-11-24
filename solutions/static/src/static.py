@@ -313,27 +313,29 @@ def manystep(
             recv = after.get_val(recv_id)
             idx = after.get_val(idx_id)
             if StackInt(0) in recv: yield "null pointer"
-            if not (recv.min == 0 and recv.max == 0):
-                if idx.min is not None and idx.max is not None:
-                    if idx.min < 0:
-                        yield "out of bounds"
-                sym_id, after = after.create_val(Interval(min=0, max=65535))
-                yield (pc + 1, after.push_id(sym_id))
+            if not idx.is_bot and not (recv.min == 0 and recv.max == 0):
+                # The reference abstraction does not track string length.
+                yield "out of bounds"
+                if idx.max is None or idx.max >= 0:
+                    sym_id, after = after.create_val(Interval(min=0, max=65535))
+                    yield (pc + 1, after.push_id(sym_id))
         case jvm.InvokeInterface(method=m) if m.extension.name == "draw":
             # draw() reads 1 bit. draw(n) reads n bits; n is on top of the stack.
             if m.extension.params:
                 [_, n_id], after = state.pop_ids(2)
                 count = after.get_val(n_id)
-                if count.min is None or count.min != count.max:
-                    raise NotImplementedError(f"draw with non-constant count {count}")
-                n = count.min
             else:
                 [_], after = state.pop_ids(1)
-                n = 1
+                count = Interval(1, 1)
 
-            if n < 0:
+            if count.is_bot:
+                return
+            if count.min is None or count.min < 0:
                 yield "illegal argument"
-            elif (result := after.smith.draw(n)) is not None:
+            if count.max is not None and count.max < 0:
+                return
+            nonnegative = Interval(max(0, count.min or 0), count.max)
+            if (result := after.smith.draw_counts(nonnegative)) is not None:
                 value, smith = result
                 sym_id, out = replace(after, smith=smith).create_val(value)
                 yield (pc + 1, out.push_id(sym_id))

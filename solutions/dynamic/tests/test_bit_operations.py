@@ -3,6 +3,7 @@ import pytest
 import jvm
 import jvm.state as jvmc
 from dynamic import step
+from dynamic_coverage import step as coverage_step
 
 
 @pytest.mark.parametrize(
@@ -47,6 +48,7 @@ def test_unsigned_right_shift(value, shift, expected):
     assert list(frame.stack.operands) == [jvmc.StackInt(123), jvmc.StackInt(expected)]
 
 
+@pytest.mark.parametrize("interpreter_step", [step, coverage_step])
 @pytest.mark.parametrize(
     "content,index,expected",
     [
@@ -54,9 +56,11 @@ def test_unsigned_right_shift(value, shift, expected):
         ("1001", 3, ord("1")),
         ("1001", 4, None),
         ("1001", -1, None),
+        ("😀", 0, 0xD83D),
+        ("😀", 1, 0xDE00),
     ],
 )
-def test_string_char_at(content, index, expected):
+def test_string_char_at(content, index, expected, interpreter_step):
     method = jvm.AbsMethodID.decode("example.Test.run:()V")
     pc = jvmc.PC(method, 0)
     frame = jvmc.Frame(
@@ -75,7 +79,7 @@ def test_string_char_at(content, index, expected):
         )
     }
 
-    executed_pc, result = step(bytecode, state)
+    executed_pc, result = interpreter_step(bytecode, state)
 
     assert executed_pc == pc
     if expected is None:

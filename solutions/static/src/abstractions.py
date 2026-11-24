@@ -915,6 +915,20 @@ class AbstractSmith(Abstraction, Lattice):
             value = Drawn(value.min, value.max, self.cursor.min, n)
         return value, AbstractSmith(self.pattern, self.length, self.cursor + Interval(n, n))
 
+    def draw_counts(self, count: Interval) -> tuple[Interval, "AbstractSmith"] | None:
+        """Read any number of bits in a nonnegative count interval."""
+        if self.is_bot or count.is_bot:
+            return None
+        if count.min is not None and count.min == count.max:
+            return self.draw(count.min)
+
+        # Intermediate counts can produce values outside the endpoint reads.
+        if count.max is None or count.max >= 32:
+            value = Interval(-(2**31), 2**31 - 1)
+        else:
+            value = Interval(0, 2**count.max - 1)
+        return value, AbstractSmith(self.pattern, self.length, self.cursor + count)
+
     def learn(self, start: int, width: int, value: Interval) -> "AbstractSmith":
         """A branch narrowed the value read from bits [start, start + width)
         to `value`. Keep only the bitstrings that agree: the bits shared by

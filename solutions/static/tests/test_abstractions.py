@@ -279,6 +279,16 @@ def test_smith_learn_is_sound(concrete, n, other, a, b):
         assert (bits, min(index + n, len(bits))) in learned
 
 
+def test_smith_draw_count_interval_includes_intermediate_signed_value():
+    bits = "1" + "0" * 32
+    smith = ab.AbstractSmith.from_bits(bits)
+    value, after = smith.draw_counts(ab.Interval(31, 33))
+
+    for count in (31, 32, 33):
+        assert concrete_draw(bits, 0, count) in value
+        assert (bits, count) in after
+
+
 def test_smith_learn_examples():
     # draw() is 1 on the true branch: that bit is 1 and the string is that long
     value, smith = ab.AbstractSmith.unknown().draw(1)

@@ -2,6 +2,7 @@
 import random
 import sys
 import string
+from abstractions import AbstractSmith
 from bitstring_structure import get_bitstring_structure
 from helpers.bitstring_input_generation import generate_inputs, mutate_input as mutate_bitstring
 import jpamb
@@ -14,6 +15,9 @@ from dynamic_java_literals import (
     get_literals_in_method,
 )
 from state_snapshot import state_snapshot
+from static import SMITH_TYPE, abstract_analysis_results
+
+MAX_SMITH_SEED_LENGTH = 10_000
 
 
 def signed_int(value: int) -> int:
@@ -391,6 +395,17 @@ def step(bc: jpamb.Bytecode, state: jvmc.State) -> tuple[jvmc.PC, jvmc.State | s
                     assert method.extension.params == [jvm.Boolean()]
                     assert method.extension.return_type is jvm.Void()
                     frame.pc += 1
+                elif method.encode() == "java.lang.String.charAt:(I)C":
+                    string = state.heap[ref]
+                    assert isinstance(string, jvmc.HeapString)
+                    encoded = string.content.encode("utf-16-le", errors="surrogatepass")
+                    offset = args[0] * 2
+                    if not 0 <= offset < len(encoded):
+                        output = "out of bounds"
+                    else:
+                        code_unit = int.from_bytes(encoded[offset : offset + 2], "little")
+                        frame.stack.push(jvmc.StackInt(code_unit))
+                        frame.pc += 1
                 elif method.extension.name == "equals":
                     assert len(method.extension.params) == 1
                     assert isinstance(method.extension.params[0], jvm.Object)
@@ -599,7 +614,40 @@ def get_method_dictionary(methodid, suite) -> dict[type, list]:
     return convert_literals(raw_literals)
 
 
-def analysis_inputs(methodid, suite):
+def smith_outcomes(bc: jpamb.Bytecode, methodid: jvm.AbsMethodID) -> dict[str, list[AbstractSmith]]:
+    if tuple(methodid.extension.params).count(SMITH_TYPE) != 1:
+        return {}
+
+    try:
+        return abstract_analysis_results(bc, methodid)
+    except (NotImplementedError, AssertionError):
+        # Static analysis supports a subset of the dynamic interpreter's inputs.
+        return {}
+
+
+def static_smith_seeds(results: dict[str, list[AbstractSmith]]) -> list[str]:
+    """Sample concrete bit strings from the Smith states for each outcome."""
+    seeds: set[str] = set()
+    for states in results.values():
+        for smith in states:
+            if smith.is_bot:
+                continue
+            lengths = {
+                max(0, smith.length.min or 0),
+                smith.length.max,
+                len(smith.pattern),
+                smith.cursor.min,
+                smith.cursor.max,
+            }
+            for length in lengths:
+                if length is None or not 0 <= length <= MAX_SMITH_SEED_LENGTH or length not in smith.length:
+                    continue
+                pattern = smith.pattern[:length].ljust(length, "?")
+                seeds.update(pattern.replace("?", bit) for bit in "01")
+    return sorted(seeds, key=lambda bits: (len(bits), bits))
+
+
+def analysis_inputs(methodid, suite, *, smith_results=None):
     if not methodid.extension.params:
         yield jpamb.case.Input(())
         return
@@ -621,7 +669,9 @@ def analysis_inputs(methodid, suite):
         None,
     )
     if smith_idx is not None:
-        for bits in generate_inputs(bitstring_structure, dictionary):
+        guided = static_smith_seeds(smith_results or {})
+        structured = generate_inputs(bitstring_structure, dictionary)
+        for bits in dict.fromkeys([*guided, *structured]):
             args = []
             for i, p in enumerate(methodid.extension.params):
                 if i == smith_idx:
@@ -643,6 +693,8 @@ def mutate_input(
     seed: jpamb.case.Input,
     structure,
     dictionary,
+    *,
+    target: AbstractSmith | None = None,
 ) -> jpamb.case.Input:
     
     new_values = []
@@ -650,6 +702,21 @@ def mutate_input(
         match val:
             case jpamb.case.Smith(bits):
                 new_bits = mutate_bitstring(bits, structure, dictionary)
+                if target is not None:
+                    lower = max(0, target.length.min or 0)
+                    upper = min(
+                        MAX_SMITH_SEED_LENGTH,
+                        target.length.max if target.length.max is not None else MAX_SMITH_SEED_LENGTH,
+                    )
+                    preferred = random.choice((len(new_bits), len(target.pattern), lower))
+                    length = min(max(preferred, lower), upper)
+                    new_bits = new_bits[:length] + "".join(
+                        random.choice("01") for _ in range(length - len(new_bits))
+                    )
+                    new_bits = "".join(
+                        bit if fixed == "?" else fixed
+                        for bit, fixed in zip(new_bits, target.pattern)
+                    ) + new_bits[len(target.pattern):]
                 new_values.append(jpamb.case.Smith(new_bits))
             case jpamb.case.Int(num):
                 delta = random.choice([-1, 1, 0])
@@ -701,6 +768,8 @@ def run_initial_seeds(
     suite: jpamb.Suite,
     structure: list,
     max_steps: int = 2000,
+    *,
+    smith_results: dict[str, list[AbstractSmith]] | None = None,
 ) -> tuple[set[str], set, list[jpamb.case.Input], set[jpamb.case.Input], list]:
     """runs analysis using given inputs."""
     behaviors: set[str] = set()
@@ -708,7 +777,9 @@ def run_initial_seeds(
     used_corpus: set[jpamb.case.Input] = set()
 
     corpus = []
-    for raw_seed in analysis_inputs(methodid, suite):
+    if smith_results is None:
+        smith_results = smith_outcomes(bc, methodid)
+    for raw_seed in analysis_inputs(methodid, suite, smith_results=smith_results):
         norm_values = tuple(
             jpamb.case.Array(v.contains, tuple(v.values))
             if isinstance(v, jpamb.case.Array) and not isinstance(v.values, tuple)
@@ -745,21 +816,46 @@ def fuzz_coverage(
     dictionary,
     budget: int = 200,
     max_steps: int = 2000,
+    *,
+    smith_results: dict[str, list[AbstractSmith]] | None = None,
+    known_behaviors: set[str] | None = None,
 ) -> set[str]:
-    """Runs coverage based fuzzing on programusing corpus"""
+    """Mutate corpus inputs, using static Smith states to target unseen outcomes."""
     behaviors: set[str] = set()
+    seen_in_seeds = known_behaviors or set()
+    pending_targets: dict[str, list[AbstractSmith]] = {}
+    for outcome, states in (smith_results or {}).items():
+        if outcome in seen_in_seeds:
+            continue
+        eligible = [
+            smith for smith in states
+            if not smith.is_bot and (smith.length.min or 0) <= MAX_SMITH_SEED_LENGTH
+        ]
+        if eligible:
+            pending_targets[outcome] = eligible
 
-    while budget > 0 and corpus:
+    for attempts_left in range(budget, 0, -1):
+        if not corpus:
+            break
         seed = random.choice(corpus)
-        mutant = mutate_input(seed, structure, dictionary)
+        target = None
+        # Alternate guided and ordinary mutations. Give each unseen outcome
+        # equal weight, even if it has more Smith states than another outcome.
+        if pending_targets and attempts_left % 2 == 0:
+            outcome = random.choice(list(pending_targets))
+            target = random.choice(pending_targets[outcome])
+        mutant = mutate_input(seed, structure, dictionary, target=target)
+        if target is not None and mutant in used_corpus:
+            mutant = mutate_input(seed, structure, dictionary)
         if mutant in used_corpus:
-            budget -= 1
             continue
         used_corpus.add(mutant)
 
         run_pcs, behavior, recorded = execute_input(bc, methodid, mutant, max_steps)
         if behavior:
             behaviors.add(behavior)
+            # Retire the outcome that actually occurred, even on an ordinary mutation.
+            pending_targets.pop(behavior, None)
 
         if run_pcs - pc_coverage:
             pc_coverage.update(run_pcs)
@@ -768,8 +864,6 @@ def fuzz_coverage(
                 if field not in structure:
                     structure.append(field)
             structure.sort(key=lambda f: (f[1], f[2]))
-
-        budget -= 1
 
     return behaviors
 
@@ -792,10 +886,11 @@ def analyse():
 
     dictionary = get_method_dictionary(methodid, suite)
     structure = list(get_bitstring_structure(methodid, suite))
+    smith_results = smith_outcomes(bc, methodid)
 
     #run on initial inputs from dictionary
     behaviors, pc_coverage, corpus, used_corpus, structure = run_initial_seeds(
-        bc, methodid, suite, structure, max_steps=MAX_STEPS
+        bc, methodid, suite, structure, max_steps=MAX_STEPS, smith_results=smith_results
     )
 
     #coverage based fuzzing.
@@ -809,6 +904,8 @@ def analyse():
         dictionary,
         budget=BUDGET,
         max_steps=MAX_STEPS,
+        smith_results=smith_results,
+        known_behaviors=behaviors,
     )
     behaviors.update(fuzz_behaviors)
 

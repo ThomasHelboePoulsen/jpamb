@@ -943,7 +943,7 @@
         ],
         "max_locals": 1,
         "max_stack": 2,
-        "stack_map": []
+        "stack_map": null
       },
       "default": null,
       "exceptions": [],
