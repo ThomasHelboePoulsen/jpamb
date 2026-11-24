@@ -14,6 +14,12 @@ from dynamic_java_literals import (
     generate_inputs_from_dict,
     get_literals_in_method,
 )
+from integer_input_generation import (
+    IntegerOperation,
+    arithmetic_inputs,
+    get_integer_operations,
+    mutate_integer,
+)
 from state_snapshot import ExecutionSnapshots
 from static import SMITH_TYPE, abstract_analysis_results
 
@@ -647,7 +653,9 @@ def static_smith_seeds(results: dict[str, list[AbstractSmith]]) -> list[str]:
     return sorted(seeds, key=lambda bits: (len(bits), bits))
 
 
-def analysis_inputs(methodid, suite, *, smith_results=None):
+def analysis_inputs(
+    methodid, suite, *, smith_results=None, integer_operations: tuple[IntegerOperation, ...] = ()
+):
     if not methodid.extension.params:
         yield jpamb.case.Input(())
         return
@@ -655,9 +663,15 @@ def analysis_inputs(methodid, suite, *, smith_results=None):
     rand = random.Random(0)
     for _ in range(10):
         yield fuzz_input(rand, methodid)
-    yield from generate_inputs_from_dict(methodid, suite)
-    
+
     dictionary = get_method_dictionary(methodid, suite)
+    dictionary_seeds = iter(generate_inputs_from_dict(methodid, suite))
+    template = next(dictionary_seeds, None)
+    if template is not None:
+        yield template
+        yield from arithmetic_inputs(template, dictionary.get(int, []), integer_operations)
+    yield from dictionary_seeds
+
     bitstring_structure = get_bitstring_structure(methodid, suite)
 
     smith_idx = next( #find smith 
@@ -695,6 +709,7 @@ def mutate_input(
     dictionary,
     *,
     target: AbstractSmith | None = None,
+    integer_operations: tuple[IntegerOperation, ...] = (),
 ) -> jpamb.case.Input:
     
     new_values = []
@@ -719,8 +734,7 @@ def mutate_input(
                     ) + new_bits[len(target.pattern):]
                 new_values.append(jpamb.case.Smith(new_bits))
             case jpamb.case.Int(num):
-                delta = random.choice([-1, 1, 0])
-                new_values.append(jpamb.case.Int(num + delta))
+                new_values.append(jpamb.case.Int(mutate_integer(num, integer_operations)))
             case jpamb.case.Boolean(b):
                 new_values.append(jpamb.case.Boolean(not b))
             case other:
@@ -810,6 +824,7 @@ def run_initial_seeds(
     max_steps: int = 2000,
     *,
     smith_results: dict[str, list[AbstractSmith]] | None = None,
+    integer_operations: tuple[IntegerOperation, ...] = (),
 ) -> tuple[set[str], set, list[jpamb.case.Input], set[jpamb.case.Input], list]:
     """runs analysis using given inputs."""
     behaviors: set[str] = set()
@@ -819,7 +834,9 @@ def run_initial_seeds(
     corpus = []
     if smith_results is None:
         smith_results = smith_outcomes(bc, methodid)
-    for raw_seed in analysis_inputs(methodid, suite, smith_results=smith_results):
+    for raw_seed in analysis_inputs(
+        methodid, suite, smith_results=smith_results, integer_operations=integer_operations
+    ):
         norm_values = tuple(
             jpamb.case.Array(v.contains, tuple(v.values))
             if isinstance(v, jpamb.case.Array) and not isinstance(v.values, tuple)
@@ -859,6 +876,7 @@ def fuzz_coverage(
     *,
     smith_results: dict[str, list[AbstractSmith]] | None = None,
     known_behaviors: set[str] | None = None,
+    integer_operations: tuple[IntegerOperation, ...] = (),
 ) -> set[str]:
     """Mutate corpus inputs, using static Smith states to target unseen outcomes."""
     behaviors: set[str] = set()
@@ -884,9 +902,11 @@ def fuzz_coverage(
         if pending_targets and attempts_left % 2 == 0:
             outcome = random.choice(list(pending_targets))
             target = random.choice(pending_targets[outcome])
-        mutant = mutate_input(seed, structure, dictionary, target=target)
+        mutant = mutate_input(
+            seed, structure, dictionary, target=target, integer_operations=integer_operations
+        )
         if target is not None and mutant in used_corpus:
-            mutant = mutate_input(seed, structure, dictionary)
+            mutant = mutate_input(seed, structure, dictionary, integer_operations=integer_operations)
         if mutant in used_corpus:
             continue
         used_corpus.add(mutant)
@@ -927,10 +947,12 @@ def analyse():
     dictionary = get_method_dictionary(methodid, suite)
     structure = list(get_bitstring_structure(methodid, suite))
     smith_results = smith_outcomes(bc, methodid)
+    integer_operations = get_integer_operations(methodid, suite)
 
     #run on initial inputs from dictionary
     behaviors, pc_coverage, corpus, used_corpus, structure = run_initial_seeds(
-        bc, methodid, suite, structure, max_steps=MAX_STEPS, smith_results=smith_results
+        bc, methodid, suite, structure, max_steps=MAX_STEPS, smith_results=smith_results,
+        integer_operations=integer_operations,
     )
 
     #coverage based fuzzing.
@@ -946,6 +968,7 @@ def analyse():
         max_steps=MAX_STEPS,
         smith_results=smith_results,
         known_behaviors=behaviors,
+        integer_operations=integer_operations,
     )
     behaviors.update(fuzz_behaviors)
 

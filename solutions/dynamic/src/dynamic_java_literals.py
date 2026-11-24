@@ -242,10 +242,7 @@ def collect_literals(root: tree_sitter.Node) -> dict[str, list[bytes]]:
     return literals
 
 
-def get_literals_in_method(
-    methodid: jvm.AbsMethodID, suite: jpamb.Suite
-) -> dict[str, list[bytes]]:
-    """Locate the requested method and collect its raw literals for conversion."""
+def method_body(methodid: jvm.AbsMethodID, suite: jpamb.Suite) -> tree_sitter.Node:
     srcfile = suite.sourcefile(methodid.classname).relative_to(Path.cwd())
     tree = parse_java_source(srcfile)
     class_node = find_class(tree.root_node, str(methodid.classname.name))
@@ -253,4 +250,10 @@ def get_literals_in_method(
     body = method_node.child_by_field_name("body")
     if body is None:
         raise ValueError(f"Method {methodid.extension.name} has no body")
-    return collect_literals(body)
+    return body
+
+
+def get_literals_in_method(
+    methodid: jvm.AbsMethodID, suite: jpamb.Suite
+) -> dict[str, list[bytes]]:
+    return collect_literals(method_body(methodid, suite))
