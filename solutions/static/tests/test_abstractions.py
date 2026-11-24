@@ -5,6 +5,7 @@ from hypothesis import strategies as st
 
 import jvm
 import jvm.state as jvms
+from static import narrow_ifz, refine_if_bounds
 
 
 def st_i32():
@@ -147,10 +148,16 @@ def test_interval_abstraction_sub(xs,ys):
   r = ab.Interval.abstract(xs) - ab.Interval.abstract(ys)
   assert all(x - y in r for x in xs for y in ys)
 
+def java_div(x: int, y: int) -> int:
+    """Java division rounds towards zero, Python's // rounds down."""
+    quotient = abs(x) // abs(y)
+    return quotient if (x < 0) == (y < 0) else -quotient
+
+
 @given(sets(integers()), sets(integers()))
 def test_interval_abstraction_div(xs,ys):
   r = ab.Interval.abstract(xs) / ab.Interval.abstract(ys)
-  assert all(x // y in r for x in xs for y in ys if y != 0)
+  assert all(java_div(x, y) in r for x in xs for y in ys if y != 0)
 
 
 @given(sets(integers()), sets(integers()))
@@ -162,7 +169,67 @@ def test_interval_abstraction_mul(xs,ys):
 @given(sets(integers()), sets(integers()))
 def test_interval_abstraction_rem(xs,ys):
   r = ab.Interval.abstract(xs) % ab.Interval.abstract(ys)
-  assert all(x % y in r for x in xs for y in ys if y != 0)
+  assert all(x - y * java_div(x, y) in r for x in xs for y in ys if y != 0)
+
+
+def st_java_int():
+    edges = st.sampled_from([-(2**31), -(2**31) + 1, -1, 0, 1, 2**31 - 2, 2**31 - 1])
+    return st.one_of(edges, st.integers(-20, 20), st.integers(-(2**31), 2**31 - 1))
+
+
+@st.composite
+def st_int_in_interval(draw):
+    """A Java int together with an interval, possibly unbounded, that contains it."""
+    value = draw(st_java_int())
+    low, high = sorted([value, draw(st_java_int())])
+    return value, ab.Interval(
+        draw(st.sampled_from([low, None])), draw(st.sampled_from([high, None]))
+    )
+
+
+def java_arithmetic(opr, x, y):
+    match opr:
+        case jvm.BinaryOpr.Add: result = x + y
+        case jvm.BinaryOpr.Sub: result = x - y
+        case jvm.BinaryOpr.Mul: result = x * y
+        case jvm.BinaryOpr.Div: result = java_div(x, y)
+        case jvm.BinaryOpr.Rem: result = x - y * java_div(x, y)
+    return (result + 2**31) % 2**32 - 2**31
+
+
+@given(st.sampled_from(list(jvm.BinaryOpr)), st_int_in_interval(), st_int_in_interval())
+def test_interval_arithmetic_covers_java(opr, left, right):
+    (x, xs), (y, ys) = left, right
+    result, errors = xs.arithmetic(ys, opr)
+    if y == 0 and opr in (jvm.BinaryOpr.Div, jvm.BinaryOpr.Rem):
+        assert "divide by zero" in errors
+    else:
+        assert java_arithmetic(opr, x, y) in result
+
+
+def test_interval_arithmetic_examples():
+    I, O = ab.Interval, jvm.BinaryOpr
+    assert I(-1, -1).arithmetic(I(2, 2), O.Div)[0] == I(0, 0)
+    assert I(-1, -1).arithmetic(I(2, 2), O.Rem)[0] == I(-1, 0)
+    assert I(0, 9).arithmetic(I(4, 4), O.Rem)[0] == I(0, 3)
+    assert I(2**30, 2**30).arithmetic(I(4, 4), O.Mul)[0] == I(0, 0)
+    # x > 0 does not mean x + 1 > 0: the largest int wraps around
+    assert -(2**31) in I(1, None).arithmetic(I(1, 1), O.Add)[0]
+
+
+@given(st.sampled_from(list(jvm.CmpOpr)), st_int_in_interval(), st_int_in_interval())
+def test_narrowing_keeps_the_concrete_values(opr, left, right):
+    compare = {
+        jvm.CmpOpr.Eq: lambda a, b: a == b, jvm.CmpOpr.Ne: lambda a, b: a != b,
+        jvm.CmpOpr.Lt: lambda a, b: a < b, jvm.CmpOpr.Le: lambda a, b: a <= b,
+        jvm.CmpOpr.Gt: lambda a, b: a > b, jvm.CmpOpr.Ge: lambda a, b: a >= b,
+    }
+    if opr not in compare:  # reference comparisons
+        return
+    (x, xs), (y, ys) = left, right
+    new_xs, new_ys = refine_if_bounds(xs, ys, opr, compare[opr](x, y))
+    assert x in new_xs and y in new_ys
+    assert x in narrow_ifz(xs, opr, compare[opr](x, 0))
 
 
 def bitwise(opr, x, y):

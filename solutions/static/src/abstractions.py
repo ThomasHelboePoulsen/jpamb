@@ -555,12 +555,17 @@ class Interval(Abstraction, Lattice):
         if self.min is None or self.max is None or other.min is None or other.max is None:
             return Interval(min=None, max=None) # if any of the bounds are unbounded, the result can be unbounded (infinity)
 
+        def java_div(x: int, y: int) -> int:
+            """Java division rounds towards zero, Python's // rounds down."""
+            quotient = abs(x) // abs(y)
+            return quotient if (x < 0) == (y < 0) else -quotient
+
         # all possible bounds
         corners = [
-            self.min // other.min,
-            self.min // other.max,
-            self.max // other.min,
-            self.max // other.max
+            java_div(self.min, other.min),
+            java_div(self.min, other.max),
+            java_div(self.max, other.min),
+            java_div(self.max, other.max)
         ]
         
         return Interval(min=min(corners), max=max(corners))
@@ -584,37 +589,37 @@ class Interval(Abstraction, Lattice):
         if other.min == 0 and other.max == 0:
             return Interval(min=1, max=0)
 
-        # Calculate the lowest possible remainder
-        if other.min is None:
-            new_min = None
-        elif other.min < 0:
-            new_min = other.min + 1  
-        else:
-            new_min = 0              
+        # A Java remainder has the sign of the dividend. Ignoring the sign, it is
+        # at most the dividend and less than the divisor.
+        lows = [] if self.min is None else [min(self.min, 0)]
+        highs = [] if self.max is None else [max(self.max, 0)]
+        if other.min is not None and other.max is not None:
+            limit = max(abs(other.min), abs(other.max)) - 1
+            lows.append(-limit)
+            highs.append(limit)
+        return Interval(min=max(lows, default=None), max=min(highs, default=None))
 
-        # Calculate the highest possible remainder
-        if other.max is None:
-            new_max = None
-        elif other.max > 0:
-            new_max = other.max - 1 
-        else:
-            new_max = 0              
-        return Interval(min=new_min, max=new_max)
+    def wrap_int(self) -> "Interval":
+        """The Java ints left after the numbers in this interval overflow."""
+        sign_bit = 2**31
+        if self.is_bot:
+            return self
+        if self.min is None or self.max is None:
+            return Interval(-sign_bit, sign_bit - 1)
+        first_wrap, low = divmod(self.min + sign_bit, 2**32)
+        last_wrap, high = divmod(self.max + sign_bit, 2**32)
+        if first_wrap != last_wrap:
+            return Interval(-sign_bit, sign_bit - 1)
+        return Interval(low - sign_bit, high - sign_bit)
 
     def arithmetic(self, other: "Interval", opr: jvm.BinaryOpr) -> tuple["Interval", set[str]]:
+        """The Java int operation: both operands are ints, and the result wraps around."""
         errors = set()
+        ints = Interval(-(2**31), 2**31 - 1)
+        self, other = self & ints, other & ints
         match opr:
             case jvm.BinaryOpr.Add:
                 res = self + other
-                if not res.is_bot and res.min is not None and res.max is not None:
-                    sign_bit = 2**31
-                    modulus = 2**32
-                    first_wrap, low = divmod(res.min + sign_bit, modulus)
-                    last_wrap, high = divmod(res.max + sign_bit, modulus)
-                    if first_wrap == last_wrap:
-                        res = Interval(low - sign_bit, high - sign_bit)
-                    else:
-                        res = Interval(-sign_bit, sign_bit - 1)
             case jvm.BinaryOpr.Sub:
                 res = self - other
             case jvm.BinaryOpr.Mul:
@@ -633,8 +638,8 @@ class Interval(Abstraction, Lattice):
                     errors.add("divide by zero")
             case _:
                 raise NotImplementedError(f"Unsupported operation: {opr}")
-                
-        return res, errors
+
+        return res.wrap_int(), errors
     def bitwise(self, other: "Interval", opr: jvm.BitOpr) -> "Interval":
         if self.is_bot:
             return self
