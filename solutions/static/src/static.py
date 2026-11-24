@@ -1,6 +1,4 @@
-import contextlib
 import heapq
-import io
 import sys
 from collections import deque
 from collections.abc import Iterable
@@ -452,8 +450,10 @@ class AbstractInterpreter:
     states: dict[PC, State]
     k_set: list[int]
     # outcome -> {pc where it is raised: Smith state there}.
-    # "*" (may run forever) is keyed by loop head: the target of a backward jump.
+    # "*" (may run forever) is keyed by the target of a back edge.
     outcome_smiths: dict[str, dict[PC, AbstractSmith]] = field(default_factory=dict)
+    forward_calls: dict[jvm.AbsMethodID, set[jvm.AbsMethodID]] = field(default_factory=dict)
+    recursive_calls: set[tuple[jvm.AbsMethodID, jvm.AbsMethodID]] = field(default_factory=set)
 
     @staticmethod
     def initial(bc: jpamb.Bytecode, methodid: jvm.AbsMethodID, inputs):
@@ -465,11 +465,38 @@ class AbstractInterpreter:
         k_set.add(0)
         return AbstractInterpreter(bc, worklist, states, sorted(list(k_set)))
 
-    def step(self) -> tuple[PC, set[str]]:
+    def is_back_edge(self, source: PC, target: PC) -> bool:
+        if source.method == target.method:
+            return target.offset <= source.offset
+
+        edge = (source.method, target.method)
+        if edge in self.recursive_calls:
+            return True
+        callees = self.forward_calls.setdefault(source.method, set())
+        if target.method in callees:
+            return False
+
+        # Keep the ordinary call graph acyclic. Widen on any new edge
+        # that would close a cycle.
+        pending = [target.method]
+        visited = set()
+        while pending:
+            method = pending.pop()
+            if method == source.method:
+                self.recursive_calls.add(edge)
+                return True
+            if method not in visited:
+                visited.add(method)
+                pending.extend(self.forward_calls.get(method, ()))
+        callees.add(target.method)
+        return False
+
+    def step(self, *, trace: bool = True) -> tuple[PC, set[str]]:
         self.worklist.sort(key=lambda p: p.offset, reverse=True)
         pc = self.worklist.pop() # pop for DFS, popleft for BFS
 
-        print(f"Stepping {pc}:\n > {self.bc[pc]}", file=sys.stderr)
+        if trace:
+            print(f"Stepping {pc}:\n > {self.bc[pc]}", file=sys.stderr)
 
         finals = set()
 
@@ -480,7 +507,7 @@ class AbstractInterpreter:
                 self.outcome_smiths.setdefault(res, {})[pc] = self.states[pc].smith
             else:
                 next_pc, next_state = res
-                backward = next_pc.method == pc.method and next_pc.offset <= pc.offset
+                backward = self.is_back_edge(pc, next_pc)
 
                 before = self.states.get(next_pc, None)
                 if before is None:
@@ -495,7 +522,7 @@ class AbstractInterpreter:
                 if before is None or after != before:
                     self.states[next_pc] = after
                     self.worklist.append(next_pc)
-                if backward:  # a reachable loop: it may run forever from its head
+                if backward:
                     self.outcome_smiths.setdefault("*", {})[next_pc] = self.states[next_pc].smith
 
         return pc, finals
@@ -637,7 +664,7 @@ def abstract_analysis_results(
     (pattern, length, cursor): one per place in the code that raises the
     outcome. Paths that meet before that place are joined into one Smith.
 
-    "*" (may run forever) lists the Smith at each reachable loop head.
+    "*" (may run forever) lists the Smith at each reachable back-edge target.
     A missing outcome cannot happen; if "*" is the only key, the method
     can only run forever. analyse() answers the queries from this dict.
 
@@ -645,9 +672,8 @@ def abstract_analysis_results(
     The Smith is bottom for methods that take no Smith.
     """
     ai = AbstractInterpreter.initial(bc, methodid, inputs)
-    with contextlib.redirect_stderr(io.StringIO()):  # hide the step trace
-        while ai.worklist:  # widening makes this reach a fixed point
-            ai.step()
+    while ai.worklist:
+        ai.step(trace=False)
     return {outcome: list(at.values()) for outcome, at in ai.outcome_smiths.items()}
 
 

@@ -8,10 +8,13 @@ import contextlib
 import io
 from functools import cache
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 import jpamb
+import jvm
+from jvm.state import PC
 from abstractions import Interval
 from static import AbstractInterpreter, abstract_analysis_results, answer
 
@@ -100,3 +103,37 @@ def test_loop_heads_are_in_the_results():
     assert len(results["*"]) == 1  # one loop
     assert "*" not in abstract_analysis_results(BC, next(
         c.experiment.entry for c in CASES if c.experiment.entry.extension.name == "twoDraws"))
+
+
+def test_mutual_recursion_widens_smith_cursor(monkeypatch):
+    first = jvm.AbsMethodID.decode("example.Test.first:(Ljpamb/utils/Smith;)V")
+    second = jvm.AbsMethodID.decode("example.Test.second:(Ljpamb/utils/Smith;)V")
+    draw = jvm.AbsMethodID.decode("jpamb.utils.Smith.draw:()Z")
+    bytecode = {
+        PC(method, opcode.offset): opcode
+        for method, callee in ((first, second), (second, first))
+        for opcode in (
+            jvm.Load(jvm.Reference(), 0, offset=0),
+            jvm.InvokeInterface(draw, 1, offset=1),
+            jvm.Store(jvm.Int(), 1, offset=2),
+            jvm.Load(jvm.Reference(), 0, offset=3),
+            jvm.InvokeStatic(callee, offset=4),
+            jvm.Return(None, offset=5),
+        )
+    }
+
+    class TestBytecode(dict):
+        suite = None
+
+        def getmethod(self, method):
+            return SimpleNamespace(max_locals=2)
+
+    monkeypatch.setattr("static.get_literals_in_method", lambda *_: {})
+    ai = AbstractInterpreter.initial(TestBytecode(bytecode), first, None)
+    for _ in range(100):
+        if not ai.worklist:
+            break
+        ai.step(trace=False)
+
+    assert not ai.worklist
+    assert ai.outcome_smiths["*"][PC(first, 0)].cursor == Interval(0, None)

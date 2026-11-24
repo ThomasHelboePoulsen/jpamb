@@ -14,7 +14,7 @@ from dynamic_java_literals import (
     generate_inputs_from_dict,
     get_literals_in_method,
 )
-from state_snapshot import state_snapshot
+from state_snapshot import ExecutionSnapshots
 from static import SMITH_TYPE, abstract_analysis_results
 
 MAX_SMITH_SEED_LENGTH = 10_000
@@ -744,6 +744,7 @@ def execute_input(
     recorded_reads: list[tuple[str, int, int]] = []
     state.recorded_reads = recorded_reads
     seen_states = set()
+    snapshots = ExecutionSnapshots()
     run_pcs = set()
     terminal_behavior = None
 
@@ -753,7 +754,7 @@ def execute_input(
         if isinstance(state, str):
             terminal_behavior = state
             break
-        snapshot = state_snapshot(state)
+        snapshot = snapshots.snapshot(state)
         if snapshot in seen_states:
             terminal_behavior = "*"
             break

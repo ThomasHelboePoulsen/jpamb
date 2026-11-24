@@ -4,7 +4,7 @@ import pytest
 
 import jvm
 import jvm.state as jvmc
-from state_snapshot import state_snapshot
+from state_snapshot import ExecutionSnapshots, state_snapshot
 
 
 def make_state():
@@ -96,3 +96,22 @@ def test_float_sign_and_nan_are_preserved():
     assert state_snapshot(state) != positive_zero
     frame.locals[0] = jvmc.StackFloat(float("nan"))
     assert state_snapshot(state) == state_snapshot(deepcopy(state))
+
+
+def test_cached_snapshot_checks_callers_after_return_and_reentry():
+    state = make_state()
+    snapshots = ExecutionSnapshots()
+    original = snapshots.snapshot(state)
+    callee = state.frames.pop()
+    snapshots.snapshot(state)
+
+    caller = state.frames.peek()
+    caller.pc += 1
+    state.frames.push(callee)
+    assert snapshots.snapshot(state) != original
+
+    state.frames.pop()
+    snapshots.snapshot(state)
+    caller.pc %= 0
+    state.frames.push(callee)
+    assert snapshots.snapshot(state) == original
