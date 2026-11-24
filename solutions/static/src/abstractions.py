@@ -759,11 +759,48 @@ class Interval(Abstraction, Lattice):
 
 @dataclass(frozen=True, eq=False)
 class Drawn(Interval):
-    """An Interval read straight from the Smith: bits [start, start + width).
-    When a branch narrows the value, the Smith can learn those bits."""
+    """An interval whose bits come from a Smith draw.
+
+    After a mask or shift, sources maps each result bit to its Smith
+    position, with None for bits that are always zero.
+    """
 
     start: int = 0
     width: int = 0
+    sources: tuple[int | None, ...] | None = None
+
+    def bit_sources(self) -> tuple[int | None, ...]:
+        if self.sources is not None:
+            return self.sources
+        return tuple(self.start + self.width - bit - 1 if bit < self.width else None
+                     for bit in range(32))
+
+    def bitwise(self, other: Interval, opr: jvm.BitOpr) -> Interval:
+        result = super().bitwise(other, opr)
+        if result.is_bot or other.min is None or other.min != other.max:
+            return result
+        constant = other.min
+        sources = self.bit_sources()
+        shift = constant & 31
+        match opr:
+            case jvm.BitOpr.And:
+                sources = tuple(source if constant & (1 << bit) else None
+                                for bit, source in enumerate(sources))
+            case jvm.BitOpr.Shl:
+                sources = (None,) * shift + sources[:32 - shift]
+            case jvm.BitOpr.Ushr:
+                sources = sources[shift:] + (None,) * shift
+            case jvm.BitOpr.Shr:
+                sources = sources[shift:] + (sources[-1],) * shift
+            case _:
+                return result
+        return Drawn(result.min, result.max, self.start, self.width, sources)
+
+    def __or__(self, other: Interval) -> Interval:
+        result = super().__or__(other)
+        if isinstance(other, Drawn) and self.bit_sources() == other.bit_sources():
+            return Drawn(result.min, result.max, self.start, self.width, self.sources)
+        return result
 
 
 @dataclass(frozen=True)
@@ -911,7 +948,7 @@ class AbstractSmith(Abstraction, Lattice):
         if self.is_bot:
             return None
         value = self.read(self.cursor, n)
-        if self.cursor.min == self.cursor.max and n < 32:
+        if self.cursor.min is not None and self.cursor.min == self.cursor.max and n <= 32:
             value = Drawn(value.min, value.max, self.cursor.min, n)
         return value, AbstractSmith(self.pattern, self.length, self.cursor + Interval(n, n))
 
@@ -963,6 +1000,25 @@ class AbstractSmith(Abstraction, Lattice):
             else:
                 pattern[k] = "0"
         return AbstractSmith("".join(pattern), length, self.cursor)
+
+    def learn_sources(self, sources: tuple[int | None, ...], value: Interval) -> "AbstractSmith":
+        """Use the endpoints' shared leading bits to constrain the Smith input."""
+        bounds = value & Interval(-(2**31), 2**31 - 1)
+        if bounds.is_bot:
+            return AbstractSmith.bot()
+
+        smith = self
+        for bit_index, source in zip(range(31, -1, -1), reversed(sources)):
+            lower_bit = (bounds.min >> bit_index) & 1
+            upper_bit = (bounds.max >> bit_index) & 1
+            if lower_bit != upper_bit:
+                break
+
+            if source is not None:
+                smith = smith.learn(source, 1, Interval(lower_bit, lower_bit))
+            elif lower_bit == 1:
+                return AbstractSmith.bot()
+        return smith
 
     def read(self, cursor: Interval, n: int) -> Interval:
         """Bound the signed Java int formed by the last 32 bits of the draw."""

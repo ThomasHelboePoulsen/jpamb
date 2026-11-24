@@ -105,6 +105,24 @@ def test_loop_heads_are_in_the_results():
         c.experiment.entry for c in CASES if c.experiment.entry.extension.name == "twoDraws"))
 
 
+@pytest.mark.parametrize(
+    "method, assertion_pattern",
+    [
+        ("randomMaskedBranch", "????01011010"),
+        ("randomShiftedBranch", "01011010"),
+        ("randomCompatibleBranches", "????01011010"),
+        ("randomContradictoryBranches", None),
+    ],
+)
+def test_constraints_from_bit_operations(method, assertion_pattern):
+    mid = jpamb.parse_methodid(f"jpamb.cases.Tricky.{method}:(Ljpamb/utils/Smith;)V")
+    results = abstract_analysis_results(BC, mid)
+    assert "ok" in results
+    assert [smith.pattern for smith in results.get("assertion error", [])] == (
+        [] if assertion_pattern is None else [assertion_pattern]
+    )
+
+
 def test_mutual_recursion_widens_smith_cursor(monkeypatch):
     first = jvm.AbsMethodID.decode("example.Test.first:(Ljpamb/utils/Smith;)V")
     second = jvm.AbsMethodID.decode("example.Test.second:(Ljpamb/utils/Smith;)V")

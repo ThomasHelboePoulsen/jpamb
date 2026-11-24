@@ -33,10 +33,14 @@ class State(sexpr.AsSExpr):
             return False
         if self.smith != other.smith:
             return False
-        for id1, id2 in zip(self.locals, other.locals):
-            if self.get_val(id1) != other.get_val(id2): return False
-        for id1, id2 in zip(self.stack, other.stack):
-            if self.get_val(id1) != other.get_val(id2): return False
+        for id1, id2 in zip(self.locals + self.stack, other.locals + other.stack):
+            left, right = self.get_val(id1), other.get_val(id2)
+            if left != right:
+                return False
+            left_sources = left.bit_sources() if isinstance(left, Drawn) else None
+            right_sources = right.bit_sources() if isinstance(right, Drawn) else None
+            if left_sources != right_sources:
+                return False
         return True
     
     def __or__(self, other):
@@ -154,14 +158,31 @@ class State(sexpr.AsSExpr):
 SMITH_TYPE = jvm.Object(jvm.ClassName("jpamb.utils.Smith"))
 
 
-def refine(state: State, sym_id: int, new_val: Interval) -> State:
+def refine(state: State, sym_id: int, new_val: Interval) -> State | None:
     """Narrow a value on a branch. If the value was read from the Smith,
     the Smith learns the bits it was read from."""
     old = state.get_val(sym_id)
     if isinstance(old, Drawn):
-        new_val = Drawn(new_val.min, new_val.max, old.start, old.width)
-        state = replace(state, smith=state.smith.learn(old.start, old.width, new_val))
+        new_val = Drawn(new_val.min, new_val.max, old.start, old.width, old.sources)
+        smith = state.smith.learn_sources(old.bit_sources(), new_val)
+        if smith.is_bot:
+            return None
+        state = replace(state, smith=smith)
     return state.update_val(sym_id, new_val)
+
+
+def straight_line_return(bc: jpamb.Bytecode, method: jvm.AbsMethodID, state: State) -> Interval:
+    """Summarize a helper that computes a return value without branching or calls."""
+    for offset, opcode in enumerate(bc.getmethod(method).opcodes):
+        if isinstance(opcode, jvm.Return) and opcode.type is not None:
+            return state.get_val(state.stack[-1])
+        if not isinstance(opcode, (jvm.Load, jvm.Push, jvm.Store, jvm.Bitopr)):
+            break
+        transition = next(iter(manystep(bc, PC(method, offset), state)), None)
+        if transition is None:
+            break
+        _, state = transition
+    return Interval.top()
 
 
 def manystep(
@@ -187,11 +208,13 @@ def manystep(
 
             if not true_val.is_bot: #yield true branch if not bottom
                 out_t = refine(after, sym_id, true_val)
-                yield (pc % target, out_t)
+                if out_t is not None:
+                    yield (pc % target, out_t)
                 
             if not false_val.is_bot: # yield false branch if not bottom
                 out_f = refine(after, sym_id, false_val)
-                yield (pc + 1, out_f)
+                if out_f is not None:
+                    yield (pc + 1, out_f)
         case jvm.NewArray(type=t, dim=dim):
             [size_id], after = state.pop_ids(1)
             size = after.get_val(size_id)
@@ -283,6 +306,11 @@ def manystep(
                 case jvm.Array():
                     sym_id, next_state = after.create_val(Interval(min=0, max=None))
                     next_state = next_state.push_id(sym_id)
+                case jvm.Int() | jvm.Boolean() if any(
+                    isinstance(after.get_val(arg), Drawn) for arg in args_ids
+                ):
+                    sym_id, next_state = after.create_val(straight_line_return(bc, method_id, callee_state))
+                    next_state = next_state.push_id(sym_id)
                 case _:
                     sym_id, next_state = after.create_val(Interval.top())
                     next_state = next_state.push_id(sym_id)
@@ -349,13 +377,14 @@ def manystep(
             t_v1, t_v2 = refine_if_bounds(v1, v2, op, is_true=True)
             f_v1, f_v2 = refine_if_bounds(v1, v2, op, is_true=False)
 
-            if not t_v1.is_bot and not t_v2.is_bot:
-                out_t = refine(refine(after, id1, t_v1), id2, t_v2)
-                yield (pc % target, out_t)
-                
-            if not f_v1.is_bot and not f_v2.is_bot:
-                out_f = refine(refine(after, id1, f_v1), id2, f_v2)
-                yield (pc + 1, out_f)
+            for target_pc, left, right in ((pc % target, t_v1, t_v2), (pc + 1, f_v1, f_v2)):
+                if left.is_bot or right.is_bot:
+                    continue
+                refined = refine(after, id1, left)
+                if refined is not None:
+                    refined = refine(refined, id2, right)
+                if refined is not None:
+                    yield (target_pc, refined)
         case jvm.Binary(operant=op):
             [id1, id2], after = state.pop_ids(2)
             v1, v2 = after.get_val(id1), after.get_val(id2)
@@ -370,6 +399,8 @@ def manystep(
             [id1, id2], after = state.pop_ids(2)
             v1, v2 = after.get_val(id1), after.get_val(id2)
 
+            if op is jvm.BitOpr.And and isinstance(v2, Drawn) and v1.min == v1.max:
+                v1, v2 = v2, v1
             res = v1.bitwise(v2, op)
             if not res.is_bot:
                 sym_id, after = after.create_val(res)

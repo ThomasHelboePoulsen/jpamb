@@ -195,6 +195,25 @@ def test_interval_bitwise_is_sound(opr, xs, ys):
     abstracted = ab.Interval.abstract(xs).bitwise(ab.Interval.abstract(ys), opr)
     assert all(result in abstracted for result in real)
 
+
+@given(
+    st.sampled_from([jvm.BitOpr.And, jvm.BitOpr.Shl, jvm.BitOpr.Shr, jvm.BitOpr.Ushr]),
+    st.integers(min_value=1, max_value=32),
+    st.text("01", max_size=32),
+    st.integers(min_value=-(2**31), max_value=2**31 - 1),
+)
+def test_learning_through_bit_operations_keeps_the_concrete_input(op, width, bits, constant):
+    drawn, smith = ab.AbstractSmith.unknown().draw(width)
+    transformed = drawn.bitwise(ab.Interval(constant, constant), op)
+    concrete = int(bits[:width].ljust(width, "0"), 2)
+    if concrete >= 2**31:
+        concrete -= 2**32
+    result = bitwise(op, concrete, constant)
+
+    learned = smith.learn_sources(transformed.bit_sources(), ab.Interval(result, result))
+    assert (bits, min(width, len(bits))) in learned
+
+
 def st_interval():
     # Lengths and cursors are never negative, so min is always a number >= 0.
     low = st.integers(min_value=0, max_value=6)
