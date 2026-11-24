@@ -733,6 +733,29 @@ def mutate_input(
 
 
 
+def loop_is_independent_of_changed_locals(
+    bc: jpamb.Bytecode,
+    loop_path: list[jvmc.PC],
+    previous_locals: tuple,
+    current_locals: tuple,
+) -> bool:
+    changed_local_indices = set()
+    for index, (previous, current) in enumerate(zip(previous_locals, current_locals)):
+        if previous == current:
+            continue
+        if not (isinstance(previous, jvmc.StackInt) and isinstance(current, jvmc.StackInt)):
+            return False
+        changed_local_indices.add(index)
+
+    for pc in loop_path:
+        instruction = bc[pc]
+        if isinstance(instruction, (jvm.InvokeStatic, jvm.Return)):
+            return False
+        if isinstance(instruction, jvm.Load) and instruction.index in changed_local_indices:
+            return False
+    return True
+
+
 def execute_input(
     bc: jpamb.Bytecode,
     methodid: jvm.AbsMethodID,
@@ -746,21 +769,37 @@ def execute_input(
     seen_states = set()
     snapshots = ExecutionSnapshots()
     run_pcs = set()
-    terminal_behavior = None
+    executed_path: list[jvmc.PC] = []
+    loop_visits: dict[tuple, tuple[int, tuple]] = {}
 
     for _ in range(max_steps):
         pc, state = step(bc, state)
         run_pcs.add(pc)
         if isinstance(state, str):
-            terminal_behavior = state
-            break
+            return run_pcs, state, recorded_reads
+
         snapshot = snapshots.snapshot(state)
         if snapshot in seen_states:
-            terminal_behavior = "*"
-            break
+            return run_pcs, "*", recorded_reads
         seen_states.add(snapshot)
+        executed_path.append(pc)
 
-    return run_pcs, terminal_behavior, recorded_reads
+        callers, (next_pc, operand_stack, current_locals), heap = snapshot
+        if next_pc.method != pc.method or next_pc.offset > pc.offset:
+            continue
+
+        loop_key = (next_pc, callers, operand_stack, heap)
+        previous_visit = loop_visits.get(loop_key)
+        loop_visits[loop_key] = (len(executed_path), current_locals)
+        if previous_visit is None:
+            continue
+
+        loop_start, previous_locals = previous_visit
+        loop_path = executed_path[loop_start:]
+        if loop_is_independent_of_changed_locals(bc, loop_path, previous_locals, current_locals):
+            return run_pcs, "*", recorded_reads
+
+    return run_pcs, None, recorded_reads
 
 
 def run_initial_seeds(
