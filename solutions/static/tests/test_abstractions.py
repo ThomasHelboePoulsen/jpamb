@@ -1,5 +1,4 @@
 import abstractions as ab
-import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -141,6 +140,31 @@ def test_interval_abstraction_distributes(xs, ys):
 def test_interval_abstraction_add(xs,ys):
   r = ab.Interval.abstract(xs) + ab.Interval.abstract(ys)
   assert all(x + y in r for x in xs for y in ys)
+
+
+def test_adding_one_to_a_positive_int_can_wrap_to_negative():
+    positive_ints = ab.Interval(1, None)
+    one = ab.Interval(1, 1)
+
+    result, errors = positive_ints.arithmetic(one, jvm.BinaryOpr.Add)
+
+    smallest_result = -2_147_483_648
+    largest_result = 2_147_483_647
+    assert result == ab.Interval(smallest_result, largest_result)
+    assert not errors
+
+
+def test_adding_minus_one_to_a_negative_int_can_wrap_to_positive():
+    negative_ints = ab.Interval(None, -1)
+    minus_one = ab.Interval(-1, -1)
+
+    result, errors = negative_ints.arithmetic(minus_one, jvm.BinaryOpr.Add)
+
+    smallest_result = -2_147_483_648
+    largest_result = 2_147_483_647
+    assert result == ab.Interval(smallest_result, largest_result)
+    assert not errors
+
 
 @given(sets(integers()), sets(integers()))
 def test_interval_abstraction_sub(xs,ys):

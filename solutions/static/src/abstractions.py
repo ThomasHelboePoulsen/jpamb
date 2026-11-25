@@ -606,8 +606,10 @@ class Interval(Abstraction, Lattice):
         match opr:
             case jvm.BinaryOpr.Add:
                 res = self + other
-                if not res.is_bot and res.min is not None and res.max is not None:
+                if not res.is_bot:
                     sign_bit = 2**31
+                    if res.min is None or res.max is None:
+                        return Interval(-sign_bit, sign_bit - 1), errors
                     modulus = 2**32
                     first_wrap, low = divmod(res.min + sign_bit, modulus)
                     last_wrap, high = divmod(res.max + sign_bit, modulus)
