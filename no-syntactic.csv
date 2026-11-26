@@ -1,0 +1,433 @@
+method,covered_instructions,total_instructions,coverage_percent,observed_outcomes,analysis_seconds
+jpamb.cases.Arrays.arrayContent:()V,38,42,90.47619047619048,assertion error,0.0030765999981667846
+jpamb.cases.Arrays.arrayContentAboveMinus13:()V,39,43,90.69767441860465,ok,0.0028607890017156024
+jpamb.cases.Arrays.arrayInBounds:()V,16,16,100.0,ok,0.0018969969969475642
+jpamb.cases.Arrays.arrayIsNull:()V,6,7,85.71428571428571,null pointer,0.0014332549981190823
+jpamb.cases.Arrays.arrayIsNullLength:()V,6,12,50.0,null pointer,0.001764153999829432
+jpamb.cases.Arrays.arrayLength:()V,18,22,81.81818181818181,ok,0.002258624997921288
+jpamb.cases.Arrays.arrayNotEmpty:([I)V,6,10,60.0,ok,0.014897656001267023
+jpamb.cases.Arrays.arrayOutOfBounds:()V,15,16,93.75,out of bounds,0.002073652998660691
+jpamb.cases.Arrays.arraySometimesNull:(I)V,16,17,94.11764705882354,null pointer;out of bounds,0.004875670998444548
+jpamb.cases.Arrays.arraySpellsHello:([C)V,13,32,40.625,assertion error,0.014894030002324143
+jpamb.cases.Arrays.arraySumIsLarge:([I)V,23,26,88.46153846153847,assertion error;ok,1.0963398280000547
+jpamb.cases.Arrays.binarySearch:(I)V,64,69,92.7536231884058,assertion error,0.02780358900054125
+jpamb.cases.BitOperations.DrawInt:(I)V,32,36,88.88888888888889,assertion error;out of bounds,0.29842064200056484
+jpamb.cases.BitOperations.bitshiftLeft:(I)V,11,14,78.57142857142857,assertion error;ok,0.0033020980008586776
+jpamb.cases.BitOperations.bitshiftRight:(I)V,11,14,78.57142857142857,assertion error;ok,0.003681469999719411
+jpamb.cases.BitOperations.bitshiftUnsignedRight:(I)V,10,14,71.42857142857143,assertion error,0.003600757001549937
+jpamb.cases.BitOperations.bitwiseAnd:(II)V,10,13,76.92307692307692,assertion error;ok,0.007573290997243021
+jpamb.cases.BitOperations.bitwiseNot:(I)V,11,14,78.57142857142857,assertion error;ok,0.0034456920002412517
+jpamb.cases.BitOperations.bitwiseOr:(II)V,11,14,78.57142857142857,assertion error;ok,0.011260131002927665
+jpamb.cases.BitOperations.xor:(II)V,10,13,76.92307692307692,assertion error;ok,0.007535469001595629
+jpamb.cases.Calls.allPrimesArePositive:(I)V,2,26,7.6923076923076925,assertion error;out of memory,0.0040809390011418145
+jpamb.cases.Calls.callsAssertFalse:()V,1,2,50.0,assertion error,0.0017896829995152075
+jpamb.cases.Calls.callsAssertFib:(I)V,4,11,36.36363636363637,assertion error,0.2601031010017323
+jpamb.cases.Calls.callsAssertIf:(Z)V,3,3,100.0,assertion error;ok,0.0034434790031809825
+jpamb.cases.Calls.callsAssertIfWithTrue:()V,3,3,100.0,ok,0.0021539759982260875
+jpamb.cases.Calls.callsAssertTrue:()V,2,2,100.0,ok,0.0016165729975909926
+jpamb.cases.Dependent.badNormalizedDistance:(II)I,25,25,100.0,ok,0.014677749000838958
+jpamb.cases.Dependent.divisionLoop:(I)V,17,21,80.95238095238095,ok,0.012793667003279552
+jpamb.cases.Dependent.normalizedDistance:(II)I,27,29,93.10344827586206,ok,0.013998467999044806
+jpamb.cases.Dependent.safeDivByN:(I)I,6,8,75.0,ok,0.0024220150007749908
+jpamb.cases.Loops.forever:()V,1,1,100.0,*,0.0007088069978635758
+jpamb.cases.Loops.neverAsserts:()V,5,12,41.666666666666664,*,0.000900361999811139
+jpamb.cases.Loops.neverDivides:()I,5,9,55.55555555555556,*,0.0007771070013404824
+jpamb.cases.Loops.terminates:()V,12,17,70.58823529411765,assertion error,0.0009234460012521595
+jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V,22,25,88.0,assertion error;divide by zero;ok,0.06325045000266982
+jpamb.cases.Randomness.compareInts:(Ljpamb/utils/Smith;)V,17,20,85.0,assertion error;ok,0.059799568000016734
+jpamb.cases.Randomness.draw34Bits:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.039084206997358706
+jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I,9,9,100.0,divide by zero;ok,0.03128447700146353
+jpamb.cases.Randomness.drawInCallee:(Ljpamb/utils/Smith;)V,7,10,70.0,assertion error;ok,0.030985549001343315
+jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V,25,28,89.28571428571429,assertion error;divide by zero;ok,0.06801799599998049
+jpamb.cases.Randomness.drawIntOverflow:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.044444308998208726
+jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,*;assertion error;ok,0.7491423700012092
+jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V,8,11,72.72727272727273,assertion error;ok,0.02434378900215961
+jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V,15,15,100.0,ok;out of bounds,0.03831269099828205
+jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V,13,13,100.0,null pointer;ok,0.03119581800274318
+jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V,5,5,100.0,*;ok,0.02414141400004155
+jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.03700155800106586
+jpamb.cases.Simple.assertBoolean:(Z)V,6,9,66.66666666666667,assertion error;ok,0.0017888520014821552
+jpamb.cases.Simple.assertFalse:()V,3,7,42.857142857142854,assertion error,0.0013193279992265161
+jpamb.cases.Simple.assertInteger:(I)V,5,9,55.55555555555556,ok,0.0023301210021600127
+jpamb.cases.Simple.assertPositive:(I)V,6,9,66.66666666666667,assertion error;ok,0.00224630199954845
+jpamb.cases.Simple.assertTrue:()V,1,1,100.0,ok,0.0009415099993930198
+jpamb.cases.Simple.checkBeforeAssert:(I)V,9,14,64.28571428571429,assertion error,0.0031240019998222124
+jpamb.cases.Simple.checkBeforeDivideByN2:(I)I,6,17,35.294117647058826,ok,0.0026789340008690488
+jpamb.cases.Simple.checkBeforeDivideByN:(I)I,8,12,66.66666666666667,ok,0.0028876409996883012
+jpamb.cases.Simple.divideByN:(I)I,4,4,100.0,ok,0.0020679219996964093
+jpamb.cases.Simple.divideByNMinus10054203:(I)I,6,6,100.0,ok,0.00250676699943142
+jpamb.cases.Simple.divideByZero:()I,3,4,75.0,divide by zero,0.0009948619990609586
+jpamb.cases.Simple.divideZeroByZero:(II)I,4,4,100.0,ok,0.0038887749979039654
+jpamb.cases.Simple.doNothing:()V,1,1,100.0,ok,0.0009586119995219633
+jpamb.cases.Simple.earlyReturn:()I,2,2,100.0,ok,0.0010296079999534413
+jpamb.cases.Simple.justAdd:(II)I,4,4,100.0,ok,0.003751793999981601
+jpamb.cases.Simple.justMulitply:(II)I,4,4,100.0,ok,0.003994304999650922
+jpamb.cases.Simple.justReturn:()I,2,2,100.0,ok,0.0008840909977152478
+jpamb.cases.Simple.justReturnNothing:()V,1,1,100.0,ok,0.000948783999774605
+jpamb.cases.Simple.multiError:(Z)I,8,12,66.66666666666667,assertion error;divide by zero,0.0016147399983310606
+jpamb.cases.Strings.sayHello:(Ljava/lang/String;)V,7,11,63.63636363636363,assertion error,0.0037493990021175705
+jpamb.cases.Tricky.collatz:(I)V,25,28,89.28571428571429,*;assertion error;ok,0.21979765400101314
+jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V,18,21,85.71428571428571,assertion error;ok,0.044332602999929804
+jpamb.cases.Tricky.randomContradictoryBranches:(Ljpamb/utils/Smith;)V,15,21,71.42857142857143,ok,0.04185847100234241
+jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.0398800270013453
+jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V,10,13,76.92307692307692,assertion error;ok,0.0504737320006825
+jpamb.cases.Arrays.arrayContent:()V,38,42,90.47619047619048,assertion error,0.0025288979995821137
+jpamb.cases.Arrays.arrayContentAboveMinus13:()V,39,43,90.69767441860465,ok,0.003014770998561289
+jpamb.cases.Arrays.arrayInBounds:()V,16,16,100.0,ok,0.0015992510016076267
+jpamb.cases.Arrays.arrayIsNull:()V,6,7,85.71428571428571,null pointer,0.001453012002457399
+jpamb.cases.Arrays.arrayIsNullLength:()V,6,12,50.0,null pointer,0.0014919369968993124
+jpamb.cases.Arrays.arrayLength:()V,18,22,81.81818181818181,ok,0.00233232400205452
+jpamb.cases.Arrays.arrayNotEmpty:([I)V,6,10,60.0,ok,0.012701057999947807
+jpamb.cases.Arrays.arrayOutOfBounds:()V,15,16,93.75,out of bounds,0.0017682119978417177
+jpamb.cases.Arrays.arraySometimesNull:(I)V,16,17,94.11764705882354,null pointer;out of bounds,0.004183514000033028
+jpamb.cases.Arrays.arraySpellsHello:([C)V,13,32,40.625,assertion error,0.01594709100027103
+jpamb.cases.Arrays.arraySumIsLarge:([I)V,23,26,88.46153846153847,assertion error;ok,0.8944711469994218
+jpamb.cases.Arrays.binarySearch:(I)V,64,69,92.7536231884058,assertion error,0.029376713999226922
+jpamb.cases.BitOperations.DrawInt:(I)V,32,36,88.88888888888889,assertion error;out of bounds,0.29506573699836736
+jpamb.cases.BitOperations.bitshiftLeft:(I)V,11,14,78.57142857142857,assertion error;ok,0.003558815998985665
+jpamb.cases.BitOperations.bitshiftRight:(I)V,11,14,78.57142857142857,assertion error;ok,0.003501117000269005
+jpamb.cases.BitOperations.bitshiftUnsignedRight:(I)V,10,14,71.42857142857143,assertion error,0.0036087709995626938
+jpamb.cases.BitOperations.bitwiseAnd:(II)V,10,13,76.92307692307692,assertion error;ok,0.008007604999875184
+jpamb.cases.BitOperations.bitwiseNot:(I)V,11,14,78.57142857142857,assertion error;ok,0.005752266999479616
+jpamb.cases.BitOperations.bitwiseOr:(II)V,11,14,78.57142857142857,assertion error;ok,0.009012997001264011
+jpamb.cases.BitOperations.xor:(II)V,10,13,76.92307692307692,assertion error;ok,0.0077447550029319245
+jpamb.cases.Calls.allPrimesArePositive:(I)V,2,26,7.6923076923076925,assertion error;out of memory,0.004584035999869229
+jpamb.cases.Calls.callsAssertFalse:()V,1,2,50.0,assertion error,0.0017389659988111816
+jpamb.cases.Calls.callsAssertFib:(I)V,4,11,36.36363636363637,assertion error,0.3008203709978261
+jpamb.cases.Calls.callsAssertIf:(Z)V,3,3,100.0,assertion error;ok,0.004267844000423793
+jpamb.cases.Calls.callsAssertIfWithTrue:()V,3,3,100.0,ok,0.0033521339973958675
+jpamb.cases.Calls.callsAssertTrue:()V,2,2,100.0,ok,0.0016629620004096068
+jpamb.cases.Dependent.badNormalizedDistance:(II)I,25,25,100.0,ok,0.013284987999213627
+jpamb.cases.Dependent.divisionLoop:(I)V,17,21,80.95238095238095,ok,0.013405327998043504
+jpamb.cases.Dependent.normalizedDistance:(II)I,27,29,93.10344827586206,ok,0.01502543899914599
+jpamb.cases.Dependent.safeDivByN:(I)I,6,8,75.0,ok,0.00222917800056166
+jpamb.cases.Loops.forever:()V,1,1,100.0,*,0.0009473390018683858
+jpamb.cases.Loops.neverAsserts:()V,5,12,41.666666666666664,*,0.001030728999467101
+jpamb.cases.Loops.neverDivides:()I,5,9,55.55555555555556,*,0.0008611970006313641
+jpamb.cases.Loops.terminates:()V,12,17,70.58823529411765,assertion error,0.001161779000540264
+jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V,22,25,88.0,assertion error;divide by zero;ok,0.0627906180015998
+jpamb.cases.Randomness.compareInts:(Ljpamb/utils/Smith;)V,17,20,85.0,assertion error;ok,0.060394391999579966
+jpamb.cases.Randomness.draw34Bits:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.04247858700182405
+jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I,9,9,100.0,divide by zero;ok,0.03215051000006497
+jpamb.cases.Randomness.drawInCallee:(Ljpamb/utils/Smith;)V,7,10,70.0,assertion error;ok,0.03203725399725954
+jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V,25,28,89.28571428571429,assertion error;divide by zero;ok,0.07628364300035173
+jpamb.cases.Randomness.drawIntOverflow:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.045206514001620235
+jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,*;assertion error;ok,0.9706512739976461
+jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V,8,11,72.72727272727273,assertion error;ok,0.02625556099883397
+jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V,15,15,100.0,ok;out of bounds,0.03549586099688895
+jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V,13,13,100.0,null pointer;ok,0.03247446599925752
+jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V,5,5,100.0,*;ok,0.024972521998279262
+jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.0377262799993332
+jpamb.cases.Simple.assertBoolean:(Z)V,6,9,66.66666666666667,assertion error;ok,0.002193501000874676
+jpamb.cases.Simple.assertFalse:()V,3,7,42.857142857142854,assertion error,0.0010694939992390573
+jpamb.cases.Simple.assertInteger:(I)V,5,9,55.55555555555556,ok,0.002535100000386592
+jpamb.cases.Simple.assertPositive:(I)V,6,9,66.66666666666667,assertion error;ok,0.0028057240015186835
+jpamb.cases.Simple.assertTrue:()V,1,1,100.0,ok,0.0011960340016230475
+jpamb.cases.Simple.checkBeforeAssert:(I)V,9,14,64.28571428571429,assertion error,0.003550761000951752
+jpamb.cases.Simple.checkBeforeDivideByN2:(I)I,6,17,35.294117647058826,ok,0.0028986420002183877
+jpamb.cases.Simple.checkBeforeDivideByN:(I)I,8,12,66.66666666666667,ok,0.003023578003194416
+jpamb.cases.Simple.divideByN:(I)I,4,4,100.0,ok,0.0022346580008161254
+jpamb.cases.Simple.divideByNMinus10054203:(I)I,6,6,100.0,ok,0.002647694000188494
+jpamb.cases.Simple.divideByZero:()I,3,4,75.0,divide by zero,0.0013129370017850306
+jpamb.cases.Simple.divideZeroByZero:(II)I,4,4,100.0,ok,0.00436791600077413
+jpamb.cases.Simple.doNothing:()V,1,1,100.0,ok,0.0012384449983073864
+jpamb.cases.Simple.earlyReturn:()I,2,2,100.0,ok,0.0013164829979359638
+jpamb.cases.Simple.justAdd:(II)I,4,4,100.0,ok,0.004414413000631612
+jpamb.cases.Simple.justMulitply:(II)I,4,4,100.0,ok,0.004333569999289466
+jpamb.cases.Simple.justReturn:()I,2,2,100.0,ok,0.0009717970024212264
+jpamb.cases.Simple.justReturnNothing:()V,1,1,100.0,ok,0.001080023001122754
+jpamb.cases.Simple.multiError:(Z)I,8,12,66.66666666666667,assertion error;divide by zero,0.0018020360002992675
+jpamb.cases.Strings.sayHello:(Ljava/lang/String;)V,7,11,63.63636363636363,assertion error,0.004424081998877227
+jpamb.cases.Tricky.collatz:(I)V,25,28,89.28571428571429,*;assertion error;ok,0.23373015700053656
+jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V,18,21,85.71428571428571,assertion error;ok,0.0458128870013752
+jpamb.cases.Tricky.randomContradictoryBranches:(Ljpamb/utils/Smith;)V,15,21,71.42857142857143,ok,0.04403843299951404
+jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.04471154299972113
+jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V,10,13,76.92307692307692,assertion error;ok,0.053406926002935506
+jpamb.cases.Arrays.arrayContent:()V,38,42,90.47619047619048,assertion error,0.002242825001303572
+jpamb.cases.Arrays.arrayContentAboveMinus13:()V,39,43,90.69767441860465,ok,0.0025412609975319356
+jpamb.cases.Arrays.arrayInBounds:()V,16,16,100.0,ok,0.0017834009995567612
+jpamb.cases.Arrays.arrayIsNull:()V,6,7,85.71428571428571,null pointer,0.0014217130010365508
+jpamb.cases.Arrays.arrayIsNullLength:()V,6,12,50.0,null pointer,0.0014796229988860432
+jpamb.cases.Arrays.arrayLength:()V,18,22,81.81818181818181,ok,0.001975324998056749
+jpamb.cases.Arrays.arrayNotEmpty:([I)V,6,10,60.0,ok,0.013205358001869172
+jpamb.cases.Arrays.arrayOutOfBounds:()V,15,16,93.75,out of bounds,0.0017148000006272923
+jpamb.cases.Arrays.arraySometimesNull:(I)V,16,17,94.11764705882354,null pointer;out of bounds,0.004294726000807714
+jpamb.cases.Arrays.arraySpellsHello:([C)V,13,32,40.625,assertion error,0.013787603998935083
+jpamb.cases.Arrays.arraySumIsLarge:([I)V,23,26,88.46153846153847,assertion error;ok,0.9243127310001
+jpamb.cases.Arrays.binarySearch:(I)V,64,69,92.7536231884058,assertion error,0.028705740998702822
+jpamb.cases.BitOperations.DrawInt:(I)V,32,36,88.88888888888889,assertion error;out of bounds,0.31838468500063755
+jpamb.cases.BitOperations.bitshiftLeft:(I)V,11,14,78.57142857142857,assertion error;ok,0.003392872000404168
+jpamb.cases.BitOperations.bitshiftRight:(I)V,11,14,78.57142857142857,assertion error;ok,0.004156232000241289
+jpamb.cases.BitOperations.bitshiftUnsignedRight:(I)V,10,14,71.42857142857143,assertion error,0.0037053160012874287
+jpamb.cases.BitOperations.bitwiseAnd:(II)V,10,13,76.92307692307692,assertion error;ok,0.007475172998965718
+jpamb.cases.BitOperations.bitwiseNot:(I)V,11,14,78.57142857142857,assertion error;ok,0.003721576002135407
+jpamb.cases.BitOperations.bitwiseOr:(II)V,11,14,78.57142857142857,assertion error;ok,0.008471635002933908
+jpamb.cases.BitOperations.xor:(II)V,10,13,76.92307692307692,assertion error;ok,0.007210060000943486
+jpamb.cases.Calls.allPrimesArePositive:(I)V,2,26,7.6923076923076925,assertion error;out of memory,0.004466162001335761
+jpamb.cases.Calls.callsAssertFalse:()V,1,2,50.0,assertion error,0.0016486739987158217
+jpamb.cases.Calls.callsAssertFib:(I)V,4,11,36.36363636363637,assertion error,0.28486889800115023
+jpamb.cases.Calls.callsAssertIf:(Z)V,3,3,100.0,assertion error;ok,0.0041613619978306815
+jpamb.cases.Calls.callsAssertIfWithTrue:()V,3,3,100.0,ok,0.002329961000214098
+jpamb.cases.Calls.callsAssertTrue:()V,2,2,100.0,ok,0.001827635001973249
+jpamb.cases.Dependent.badNormalizedDistance:(II)I,25,25,100.0,ok,0.013860815000953153
+jpamb.cases.Dependent.divisionLoop:(I)V,17,21,80.95238095238095,ok,0.014135498997347895
+jpamb.cases.Dependent.normalizedDistance:(II)I,27,29,93.10344827586206,ok,0.01509065299978829
+jpamb.cases.Dependent.safeDivByN:(I)I,6,8,75.0,ok,0.0024737329986237455
+jpamb.cases.Loops.forever:()V,1,1,100.0,*,0.0007576210009574424
+jpamb.cases.Loops.neverAsserts:()V,5,12,41.666666666666664,*,0.0009927880018949509
+jpamb.cases.Loops.neverDivides:()I,5,9,55.55555555555556,*,0.000821280998934526
+jpamb.cases.Loops.terminates:()V,12,17,70.58823529411765,assertion error,0.0012775300019711722
+jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V,22,25,88.0,assertion error;divide by zero;ok,0.06297253599768737
+jpamb.cases.Randomness.compareInts:(Ljpamb/utils/Smith;)V,17,20,85.0,assertion error;ok,0.05952034000074491
+jpamb.cases.Randomness.draw34Bits:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.04017960900091566
+jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I,9,9,100.0,divide by zero;ok,0.028979702001379337
+jpamb.cases.Randomness.drawInCallee:(Ljpamb/utils/Smith;)V,7,10,70.0,assertion error;ok,0.03246113100249204
+jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V,25,28,89.28571428571429,assertion error;divide by zero;ok,0.07116638500156114
+jpamb.cases.Randomness.drawIntOverflow:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.04583488999924157
+jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,*;assertion error;ok,0.7064565230029984
+jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V,8,11,72.72727272727273,assertion error;ok,0.02471044400226674
+jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V,15,15,100.0,ok;out of bounds,0.03785213100127294
+jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V,13,13,100.0,null pointer;ok,0.03412789099820657
+jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V,5,5,100.0,*;ok,0.024894073998439126
+jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.039329232000454795
+jpamb.cases.Simple.assertBoolean:(Z)V,6,9,66.66666666666667,assertion error;ok,0.001765716999216238
+jpamb.cases.Simple.assertFalse:()V,3,7,42.857142857142854,assertion error,0.0010855539985641371
+jpamb.cases.Simple.assertInteger:(I)V,5,9,55.55555555555556,ok,0.0024338779985555448
+jpamb.cases.Simple.assertPositive:(I)V,6,9,66.66666666666667,assertion error;ok,0.0024030790009419434
+jpamb.cases.Simple.assertTrue:()V,1,1,100.0,ok,0.0009397169997100718
+jpamb.cases.Simple.checkBeforeAssert:(I)V,9,14,64.28571428571429,assertion error,0.003119330998742953
+jpamb.cases.Simple.checkBeforeDivideByN2:(I)I,6,17,35.294117647058826,ok,0.0027320139997755177
+jpamb.cases.Simple.checkBeforeDivideByN:(I)I,8,12,66.66666666666667,ok,0.0031244299971149303
+jpamb.cases.Simple.divideByN:(I)I,4,4,100.0,ok,0.0023268939985428005
+jpamb.cases.Simple.divideByNMinus10054203:(I)I,6,6,100.0,ok,0.002581698001449695
+jpamb.cases.Simple.divideByZero:()I,3,4,75.0,divide by zero,0.0012399980005284306
+jpamb.cases.Simple.divideZeroByZero:(II)I,4,4,100.0,ok,0.004648738999094348
+jpamb.cases.Simple.doNothing:()V,1,1,100.0,ok,0.0009011930014821701
+jpamb.cases.Simple.earlyReturn:()I,2,2,100.0,ok,0.0011055219983973075
+jpamb.cases.Simple.justAdd:(II)I,4,4,100.0,ok,0.004087240999069763
+jpamb.cases.Simple.justMulitply:(II)I,4,4,100.0,ok,0.004377332999865757
+jpamb.cases.Simple.justReturn:()I,2,2,100.0,ok,0.0010575910018815193
+jpamb.cases.Simple.justReturnNothing:()V,1,1,100.0,ok,0.0009723289986141026
+jpamb.cases.Simple.multiError:(Z)I,8,12,66.66666666666667,assertion error;divide by zero,0.0019502379982441198
+jpamb.cases.Strings.sayHello:(Ljava/lang/String;)V,7,11,63.63636363636363,assertion error,0.00384409899925231
+jpamb.cases.Tricky.collatz:(I)V,25,28,89.28571428571429,*;assertion error;ok,0.2447151220003434
+jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V,18,21,85.71428571428571,assertion error;ok,0.046313540002302034
+jpamb.cases.Tricky.randomContradictoryBranches:(Ljpamb/utils/Smith;)V,10,21,47.61904761904762,ok,0.04824520200054394
+jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.043223717002547346
+jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V,10,13,76.92307692307692,assertion error;ok,0.052058123001188505
+jpamb.cases.Arrays.arrayContent:()V,38,42,90.47619047619048,assertion error,0.0024946730009105522
+jpamb.cases.Arrays.arrayContentAboveMinus13:()V,39,43,90.69767441860465,ok,0.0023121360027289484
+jpamb.cases.Arrays.arrayInBounds:()V,16,16,100.0,ok,0.0016362409987777937
+jpamb.cases.Arrays.arrayIsNull:()V,6,7,85.71428571428571,null pointer,0.0014870570012135431
+jpamb.cases.Arrays.arrayIsNullLength:()V,6,12,50.0,null pointer,0.001695062997896457
+jpamb.cases.Arrays.arrayLength:()V,18,22,81.81818181818181,ok,0.0016375430022890214
+jpamb.cases.Arrays.arrayNotEmpty:([I)V,6,10,60.0,ok,0.013337488999241032
+jpamb.cases.Arrays.arrayOutOfBounds:()V,15,16,93.75,out of bounds,0.0014753450013813563
+jpamb.cases.Arrays.arraySometimesNull:(I)V,16,17,94.11764705882354,null pointer;out of bounds,0.004336003999924287
+jpamb.cases.Arrays.arraySpellsHello:([C)V,13,32,40.625,assertion error,0.015214348000881728
+jpamb.cases.Arrays.arraySumIsLarge:([I)V,23,26,88.46153846153847,assertion error;ok,0.9225582180006313
+jpamb.cases.Arrays.binarySearch:(I)V,64,69,92.7536231884058,assertion error,0.02952785399975255
+jpamb.cases.BitOperations.DrawInt:(I)V,32,36,88.88888888888889,assertion error;out of bounds,0.3082757849988411
+jpamb.cases.BitOperations.bitshiftLeft:(I)V,11,14,78.57142857142857,assertion error;ok,0.0036338799982331693
+jpamb.cases.BitOperations.bitshiftRight:(I)V,11,14,78.57142857142857,assertion error;ok,0.003412769001442939
+jpamb.cases.BitOperations.bitshiftUnsignedRight:(I)V,10,14,71.42857142857143,assertion error,0.003981860998464981
+jpamb.cases.BitOperations.bitwiseAnd:(II)V,10,13,76.92307692307692,assertion error;ok,0.007880683999246685
+jpamb.cases.BitOperations.bitwiseNot:(I)V,11,14,78.57142857142857,assertion error;ok,0.0038682939994032495
+jpamb.cases.BitOperations.bitwiseOr:(II)V,11,14,78.57142857142857,assertion error;ok,0.009359506999317091
+jpamb.cases.BitOperations.xor:(II)V,10,13,76.92307692307692,assertion error;ok,0.008279813002445735
+jpamb.cases.Calls.allPrimesArePositive:(I)V,2,26,7.6923076923076925,assertion error;out of memory,0.005403463997936342
+jpamb.cases.Calls.callsAssertFalse:()V,1,2,50.0,assertion error,0.002014631001657108
+jpamb.cases.Calls.callsAssertFib:(I)V,4,11,36.36363636363637,assertion error,0.31096103599702474
+jpamb.cases.Calls.callsAssertIf:(Z)V,3,3,100.0,assertion error;ok,0.003922709998732898
+jpamb.cases.Calls.callsAssertIfWithTrue:()V,3,3,100.0,ok,0.002355127999180695
+jpamb.cases.Calls.callsAssertTrue:()V,2,2,100.0,ok,0.0016016759982449003
+jpamb.cases.Dependent.badNormalizedDistance:(II)I,25,25,100.0,ok,0.0133359899991774
+jpamb.cases.Dependent.divisionLoop:(I)V,17,21,80.95238095238095,ok,0.013529066000046441
+jpamb.cases.Dependent.normalizedDistance:(II)I,27,29,93.10344827586206,ok,0.015577801001199987
+jpamb.cases.Dependent.safeDivByN:(I)I,6,8,75.0,ok,0.002515493000828428
+jpamb.cases.Loops.forever:()V,1,1,100.0,*,0.0008546550016035326
+jpamb.cases.Loops.neverAsserts:()V,5,12,41.666666666666664,*,0.0008867369979270734
+jpamb.cases.Loops.neverDivides:()I,5,9,55.55555555555556,*,0.00103663100162521
+jpamb.cases.Loops.terminates:()V,12,17,70.58823529411765,assertion error,0.0011636330018518493
+jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V,22,25,88.0,assertion error;divide by zero;ok,0.062786384998617
+jpamb.cases.Randomness.compareInts:(Ljpamb/utils/Smith;)V,17,20,85.0,assertion error;ok,0.05803394800022943
+jpamb.cases.Randomness.draw34Bits:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.03916730100172572
+jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I,9,9,100.0,divide by zero;ok,0.03047234599944204
+jpamb.cases.Randomness.drawInCallee:(Ljpamb/utils/Smith;)V,7,10,70.0,assertion error;ok,0.03028059200005373
+jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V,25,28,89.28571428571429,assertion error;divide by zero;ok,0.07255545199950575
+jpamb.cases.Randomness.drawIntOverflow:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.04710859300030279
+jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,*;assertion error;ok,0.9990688369980489
+jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V,8,11,72.72727272727273,assertion error;ok,0.02576350199888111
+jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V,15,15,100.0,ok;out of bounds,0.03624621500057401
+jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V,13,13,100.0,null pointer;ok,0.034002028001850704
+jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V,5,5,100.0,*;ok,0.025851810001768172
+jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.056453262997820275
+jpamb.cases.Simple.assertBoolean:(Z)V,6,9,66.66666666666667,assertion error;ok,0.0017981390010390896
+jpamb.cases.Simple.assertFalse:()V,3,7,42.857142857142854,assertion error,0.0012989759998163208
+jpamb.cases.Simple.assertInteger:(I)V,5,9,55.55555555555556,ok,0.0027418240024417173
+jpamb.cases.Simple.assertPositive:(I)V,6,9,66.66666666666667,assertion error;ok,0.0026106650002475362
+jpamb.cases.Simple.assertTrue:()V,1,1,100.0,ok,0.0009651350010244641
+jpamb.cases.Simple.checkBeforeAssert:(I)V,9,14,64.28571428571429,assertion error,0.0034126400023524184
+jpamb.cases.Simple.checkBeforeDivideByN2:(I)I,6,17,35.294117647058826,ok,0.00280605599982664
+jpamb.cases.Simple.checkBeforeDivideByN:(I)I,8,12,66.66666666666667,ok,0.003866282000672072
+jpamb.cases.Simple.divideByN:(I)I,4,4,100.0,ok,0.0029050140001345426
+jpamb.cases.Simple.divideByNMinus10054203:(I)I,6,6,100.0,ok,0.003179996998369461
+jpamb.cases.Simple.divideByZero:()I,3,4,75.0,divide by zero,0.0013250199990579858
+jpamb.cases.Simple.divideZeroByZero:(II)I,4,4,100.0,ok,0.0058411290010553785
+jpamb.cases.Simple.doNothing:()V,1,1,100.0,ok,0.00144657100099721
+jpamb.cases.Simple.earlyReturn:()I,2,2,100.0,ok,0.0012995810029678978
+jpamb.cases.Simple.justAdd:(II)I,4,4,100.0,ok,0.0053768239995406475
+jpamb.cases.Simple.justMulitply:(II)I,4,4,100.0,ok,0.006400662001396995
+jpamb.cases.Simple.justReturn:()I,2,2,100.0,ok,0.0010971960000460967
+jpamb.cases.Simple.justReturnNothing:()V,1,1,100.0,ok,0.0011288969981251284
+jpamb.cases.Simple.multiError:(Z)I,8,12,66.66666666666667,assertion error;divide by zero,0.0025269649995607324
+jpamb.cases.Strings.sayHello:(Ljava/lang/String;)V,7,11,63.63636363636363,assertion error,0.005187463997572195
+jpamb.cases.Tricky.collatz:(I)V,25,28,89.28571428571429,*;assertion error;ok,0.289287946998229
+jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V,18,21,85.71428571428571,assertion error;ok,0.054038638998463284
+jpamb.cases.Tricky.randomContradictoryBranches:(Ljpamb/utils/Smith;)V,15,21,71.42857142857143,ok,0.06169927500013728
+jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.04747299600057886
+jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V,10,13,76.92307692307692,assertion error;ok,0.057772950996877626
+jpamb.cases.Arrays.arrayContent:()V,38,42,90.47619047619048,assertion error,0.0025443380000069737
+jpamb.cases.Arrays.arrayContentAboveMinus13:()V,39,43,90.69767441860465,ok,0.0025355409998155665
+jpamb.cases.Arrays.arrayInBounds:()V,16,16,100.0,ok,0.0018555979986558668
+jpamb.cases.Arrays.arrayIsNull:()V,6,7,85.71428571428571,null pointer,0.0016635930005577393
+jpamb.cases.Arrays.arrayIsNullLength:()V,6,12,50.0,null pointer,0.0015709369981777854
+jpamb.cases.Arrays.arrayLength:()V,18,22,81.81818181818181,ok,0.002108310000039637
+jpamb.cases.Arrays.arrayNotEmpty:([I)V,6,10,60.0,ok,0.01578443300240906
+jpamb.cases.Arrays.arrayOutOfBounds:()V,15,16,93.75,out of bounds,0.0021727310013375245
+jpamb.cases.Arrays.arraySometimesNull:(I)V,16,17,94.11764705882354,null pointer;out of bounds,0.005501499999809312
+jpamb.cases.Arrays.arraySpellsHello:([C)V,13,32,40.625,assertion error,0.0170919589982077
+jpamb.cases.Arrays.arraySumIsLarge:([I)V,23,26,88.46153846153847,assertion error;ok,1.0025498520008114
+jpamb.cases.Arrays.binarySearch:(I)V,64,69,92.7536231884058,assertion error,0.029042041998764034
+jpamb.cases.BitOperations.DrawInt:(I)V,32,36,88.88888888888889,assertion error;out of bounds,0.2909361309975793
+jpamb.cases.BitOperations.bitshiftLeft:(I)V,11,14,78.57142857142857,assertion error;ok,0.0039789459988242015
+jpamb.cases.BitOperations.bitshiftRight:(I)V,11,14,78.57142857142857,assertion error;ok,0.003892110999004217
+jpamb.cases.BitOperations.bitshiftUnsignedRight:(I)V,10,14,71.42857142857143,assertion error,0.003941595001379028
+jpamb.cases.BitOperations.bitwiseAnd:(II)V,10,13,76.92307692307692,assertion error;ok,0.007808988000761019
+jpamb.cases.BitOperations.bitwiseNot:(I)V,11,14,78.57142857142857,assertion error;ok,0.004096739001397509
+jpamb.cases.BitOperations.bitwiseOr:(II)V,11,14,78.57142857142857,assertion error;ok,0.010392520998721011
+jpamb.cases.BitOperations.xor:(II)V,10,13,76.92307692307692,assertion error;ok,0.007748973999696318
+jpamb.cases.Calls.allPrimesArePositive:(I)V,2,26,7.6923076923076925,assertion error;out of memory,0.004621607000444783
+jpamb.cases.Calls.callsAssertFalse:()V,1,2,50.0,assertion error,0.0018183069987571798
+jpamb.cases.Calls.callsAssertFib:(I)V,4,11,36.36363636363637,assertion error,0.28220835300089675
+jpamb.cases.Calls.callsAssertIf:(Z)V,3,3,100.0,assertion error;ok,0.00409388600019156
+jpamb.cases.Calls.callsAssertIfWithTrue:()V,3,3,100.0,ok,0.00246403499841108
+jpamb.cases.Calls.callsAssertTrue:()V,2,2,100.0,ok,0.0019645459979074076
+jpamb.cases.Dependent.badNormalizedDistance:(II)I,25,25,100.0,ok,0.023575516999699175
+jpamb.cases.Dependent.divisionLoop:(I)V,17,21,80.95238095238095,ok,0.014534656998876017
+jpamb.cases.Dependent.normalizedDistance:(II)I,27,29,93.10344827586206,ok,0.014094256999669597
+jpamb.cases.Dependent.safeDivByN:(I)I,6,8,75.0,ok,0.002191736999520799
+jpamb.cases.Loops.forever:()V,1,1,100.0,*,0.0007615079994138796
+jpamb.cases.Loops.neverAsserts:()V,5,12,41.666666666666664,*,0.0010487039980944246
+jpamb.cases.Loops.neverDivides:()I,5,9,55.55555555555556,*,0.0009630310014472343
+jpamb.cases.Loops.terminates:()V,12,17,70.58823529411765,assertion error,0.0011665480014926288
+jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V,22,25,88.0,assertion error;divide by zero;ok,0.05647900999974809
+jpamb.cases.Randomness.compareInts:(Ljpamb/utils/Smith;)V,17,20,85.0,assertion error;ok,0.05706806099988171
+jpamb.cases.Randomness.draw34Bits:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.03916164199836203
+jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I,9,9,100.0,divide by zero;ok,0.030327243999636266
+jpamb.cases.Randomness.drawInCallee:(Ljpamb/utils/Smith;)V,7,10,70.0,assertion error;ok,0.02902495799935423
+jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V,25,28,89.28571428571429,assertion error;divide by zero;ok,0.066416264999134
+jpamb.cases.Randomness.drawIntOverflow:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.04477390299871331
+jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,*;assertion error;ok,0.7572566690032545
+jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V,8,11,72.72727272727273,assertion error;ok,0.02506088099835324
+jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V,15,15,100.0,ok;out of bounds,0.03440718199999537
+jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V,13,13,100.0,null pointer;ok,0.032421056002931437
+jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V,5,5,100.0,*;ok,0.023557663000246976
+jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.036874844001431484
+jpamb.cases.Simple.assertBoolean:(Z)V,6,9,66.66666666666667,assertion error;ok,0.0018837720017472748
+jpamb.cases.Simple.assertFalse:()V,3,7,42.857142857142854,assertion error,0.0011431240018282551
+jpamb.cases.Simple.assertInteger:(I)V,5,9,55.55555555555556,ok,0.002808761000778759
+jpamb.cases.Simple.assertPositive:(I)V,6,9,66.66666666666667,assertion error;ok,0.0023123259998101275
+jpamb.cases.Simple.assertTrue:()V,1,1,100.0,ok,0.0008494450012221932
+jpamb.cases.Simple.checkBeforeAssert:(I)V,9,14,64.28571428571429,assertion error,0.00306444600209943
+jpamb.cases.Simple.checkBeforeDivideByN2:(I)I,6,17,35.294117647058826,ok,0.0030446090022451244
+jpamb.cases.Simple.checkBeforeDivideByN:(I)I,8,12,66.66666666666667,ok,0.002859737000107998
+jpamb.cases.Simple.divideByN:(I)I,4,4,100.0,ok,0.0027450689995021094
+jpamb.cases.Simple.divideByNMinus10054203:(I)I,6,6,100.0,ok,0.003245381001761416
+jpamb.cases.Simple.divideByZero:()I,3,4,75.0,divide by zero,0.0010922060027951375
+jpamb.cases.Simple.divideZeroByZero:(II)I,4,4,100.0,ok,0.0041859090015350375
+jpamb.cases.Simple.doNothing:()V,1,1,100.0,ok,0.0008707460001460277
+jpamb.cases.Simple.earlyReturn:()I,2,2,100.0,ok,0.0012006629985990003
+jpamb.cases.Simple.justAdd:(II)I,4,4,100.0,ok,0.004667815002903808
+jpamb.cases.Simple.justMulitply:(II)I,4,4,100.0,ok,0.004235342999891145
+jpamb.cases.Simple.justReturn:()I,2,2,100.0,ok,0.0009803939974517561
+jpamb.cases.Simple.justReturnNothing:()V,1,1,100.0,ok,0.001057411001966102
+jpamb.cases.Simple.multiError:(Z)I,8,12,66.66666666666667,assertion error;divide by zero,0.0018147410009987652
+jpamb.cases.Strings.sayHello:(Ljava/lang/String;)V,7,11,63.63636363636363,assertion error,0.003906538000592263
+jpamb.cases.Tricky.collatz:(I)V,25,28,89.28571428571429,*;assertion error;ok,0.21538516600048752
+jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V,18,21,85.71428571428571,assertion error;ok,0.048565041997790104
+jpamb.cases.Tricky.randomContradictoryBranches:(Ljpamb/utils/Smith;)V,15,21,71.42857142857143,ok,0.04404513799818233
+jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.04731759200149099
+jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V,10,13,76.92307692307692,assertion error;ok,0.06310233399926801
+jpamb.cases.Arrays.arrayContent:()V,38,42,90.47619047619048,assertion error,0.0025424040031793993
+jpamb.cases.Arrays.arrayContentAboveMinus13:()V,39,43,90.69767441860465,ok,0.0027174569986527786
+jpamb.cases.Arrays.arrayInBounds:()V,16,16,100.0,ok,0.0018156830010411795
+jpamb.cases.Arrays.arrayIsNull:()V,6,7,85.71428571428571,null pointer,0.001605612997082062
+jpamb.cases.Arrays.arrayIsNullLength:()V,6,12,50.0,null pointer,0.0018536540010245517
+jpamb.cases.Arrays.arrayLength:()V,18,22,81.81818181818181,ok,0.0019581829983508214
+jpamb.cases.Arrays.arrayNotEmpty:([I)V,6,10,60.0,ok,0.013222551999206189
+jpamb.cases.Arrays.arrayOutOfBounds:()V,15,16,93.75,out of bounds,0.001468382000894053
+jpamb.cases.Arrays.arraySometimesNull:(I)V,16,17,94.11764705882354,null pointer;out of bounds,0.004772333999426337
+jpamb.cases.Arrays.arraySpellsHello:([C)V,13,32,40.625,assertion error,0.015189161997113843
+jpamb.cases.Arrays.arraySumIsLarge:([I)V,23,26,88.46153846153847,assertion error;ok,0.8917570300000079
+jpamb.cases.Arrays.binarySearch:(I)V,64,69,92.7536231884058,assertion error,0.02873881399864331
+jpamb.cases.BitOperations.DrawInt:(I)V,32,36,88.88888888888889,assertion error;out of bounds,0.2906143809996138
+jpamb.cases.BitOperations.bitshiftLeft:(I)V,11,14,78.57142857142857,assertion error;ok,0.003943067000363953
+jpamb.cases.BitOperations.bitshiftRight:(I)V,11,14,78.57142857142857,assertion error;ok,0.004312160002882592
+jpamb.cases.BitOperations.bitshiftUnsignedRight:(I)V,10,14,71.42857142857143,assertion error,0.004863127000135137
+jpamb.cases.BitOperations.bitwiseAnd:(II)V,10,13,76.92307692307692,assertion error;ok,0.00861826700202073
+jpamb.cases.BitOperations.bitwiseNot:(I)V,11,14,78.57142857142857,assertion error;ok,0.003955440999561688
+jpamb.cases.BitOperations.bitwiseOr:(II)V,11,14,78.57142857142857,assertion error;ok,0.007801444000506308
+jpamb.cases.BitOperations.xor:(II)V,10,13,76.92307692307692,assertion error;ok,0.008094911001535365
+jpamb.cases.Calls.allPrimesArePositive:(I)V,2,26,7.6923076923076925,assertion error;out of memory,0.005012830999476137
+jpamb.cases.Calls.callsAssertFalse:()V,1,2,50.0,assertion error,0.001770486000168603
+jpamb.cases.Calls.callsAssertFib:(I)V,4,11,36.36363636363637,assertion error,0.28215934399850084
+jpamb.cases.Calls.callsAssertIf:(Z)V,3,3,100.0,assertion error;ok,0.004106128002604237
+jpamb.cases.Calls.callsAssertIfWithTrue:()V,3,3,100.0,ok,0.0023493070002587046
+jpamb.cases.Calls.callsAssertTrue:()V,2,2,100.0,ok,0.0016894319996936247
+jpamb.cases.Dependent.badNormalizedDistance:(II)I,25,25,100.0,ok,0.013954943999124225
+jpamb.cases.Dependent.divisionLoop:(I)V,17,21,80.95238095238095,ok,0.01365820999853895
+jpamb.cases.Dependent.normalizedDistance:(II)I,27,29,93.10344827586206,ok,0.014542270997480955
+jpamb.cases.Dependent.safeDivByN:(I)I,6,8,75.0,ok,0.0026354809997428674
+jpamb.cases.Loops.forever:()V,1,1,100.0,*,0.0007591729990963358
+jpamb.cases.Loops.neverAsserts:()V,5,12,41.666666666666664,*,0.0011019360026693903
+jpamb.cases.Loops.neverDivides:()I,5,9,55.55555555555556,*,0.0008546449971618131
+jpamb.cases.Loops.terminates:()V,12,17,70.58823529411765,assertion error,0.0013648149979417212
+jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V,22,25,88.0,assertion error;divide by zero;ok,0.061411917999066645
+jpamb.cases.Randomness.compareInts:(Ljpamb/utils/Smith;)V,17,20,85.0,assertion error;ok,0.05811335800171946
+jpamb.cases.Randomness.draw34Bits:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.04154319100052817
+jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I,9,9,100.0,divide by zero;ok,0.0310693249994074
+jpamb.cases.Randomness.drawInCallee:(Ljpamb/utils/Smith;)V,7,10,70.0,assertion error;ok,0.03311033700083499
+jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V,25,28,89.28571428571429,assertion error;divide by zero;ok,0.07357819199751248
+jpamb.cases.Randomness.drawIntOverflow:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.044596857002034085
+jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,*;assertion error;ok,0.9835789019998629
+jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V,8,11,72.72727272727273,assertion error;ok,0.026386601999547565
+jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V,15,15,100.0,ok;out of bounds,0.03994522299763048
+jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V,13,13,100.0,null pointer;ok,0.035527883999748155
+jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V,5,5,100.0,*;ok,0.024185637001210125
+jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V,14,17,82.3529411764706,assertion error;ok,0.037141139997402206
+jpamb.cases.Simple.assertBoolean:(Z)V,6,9,66.66666666666667,assertion error;ok,0.0018175559998780955
+jpamb.cases.Simple.assertFalse:()V,3,7,42.857142857142854,assertion error,0.0011428729994804598
+jpamb.cases.Simple.assertInteger:(I)V,5,9,55.55555555555556,ok,0.002843646998371696
+jpamb.cases.Simple.assertPositive:(I)V,6,9,66.66666666666667,assertion error;ok,0.002594574001705041
+jpamb.cases.Simple.assertTrue:()V,1,1,100.0,ok,0.0010761860030470416
+jpamb.cases.Simple.checkBeforeAssert:(I)V,9,14,64.28571428571429,assertion error,0.005978960001812084
+jpamb.cases.Simple.checkBeforeDivideByN2:(I)I,6,17,35.294117647058826,ok,0.0034744059994409326
+jpamb.cases.Simple.checkBeforeDivideByN:(I)I,8,12,66.66666666666667,ok,0.003817478998826118
+jpamb.cases.Simple.divideByN:(I)I,4,4,100.0,ok,0.0026589359986246563
+jpamb.cases.Simple.divideByNMinus10054203:(I)I,6,6,100.0,ok,0.002904843000578694
+jpamb.cases.Simple.divideByZero:()I,3,4,75.0,divide by zero,0.0011808560011559166
+jpamb.cases.Simple.divideZeroByZero:(II)I,4,4,100.0,ok,0.004270931000064593
+jpamb.cases.Simple.doNothing:()V,1,1,100.0,ok,0.0009248890019080136
+jpamb.cases.Simple.earlyReturn:()I,2,2,100.0,ok,0.001707646999420831
+jpamb.cases.Simple.justAdd:(II)I,4,4,100.0,ok,0.004635254001186695
+jpamb.cases.Simple.justMulitply:(II)I,4,4,100.0,ok,0.008129507001285674
+jpamb.cases.Simple.justReturn:()I,2,2,100.0,ok,0.0012556469991977792
+jpamb.cases.Simple.justReturnNothing:()V,1,1,100.0,ok,0.0011898209995706566
+jpamb.cases.Simple.multiError:(Z)I,8,12,66.66666666666667,assertion error;divide by zero,0.0023671910021221265
+jpamb.cases.Strings.sayHello:(Ljava/lang/String;)V,7,11,63.63636363636363,assertion error,0.031734559997858014
+jpamb.cases.Tricky.collatz:(I)V,25,28,89.28571428571429,*;assertion error;ok,0.39913683499980834
+jpamb.cases.Tricky.randomCompatibleBranches:(Ljpamb/utils/Smith;)V,18,21,85.71428571428571,assertion error;ok,0.05260227799954009
+jpamb.cases.Tricky.randomContradictoryBranches:(Ljpamb/utils/Smith;)V,15,21,71.42857142857143,ok,0.04470636399855721
+jpamb.cases.Tricky.randomMaskedBranch:(Ljpamb/utils/Smith;)V,13,16,81.25,assertion error;ok,0.04848212499928195
+jpamb.cases.Tricky.randomShiftedBranch:(Ljpamb/utils/Smith;)V,10,13,76.92307692307692,assertion error;ok,0.05116733999966527

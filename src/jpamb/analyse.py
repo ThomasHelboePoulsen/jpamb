@@ -301,12 +301,14 @@ class Config:
         workdir: Path,
         pedantic: bool = True,
         eff: Effect,
+        env: dict[str, str] | None = None,
     ) -> Result | None:
         try:
             experiment = eff.experiment(
                 self.cmd + (methodid.encode(),),
                 timeout=self.timeout,
                 cwd=workdir,
+                env=env,
             )
         except subprocess.CalledProcessError as e:
             eff.warning(f"Ran {shlex.join(self.cmd)} info, and got error:\n{e.stderr}")
@@ -595,6 +597,7 @@ class State:
         score_limit: float | None = None,
         workdir: Path,
         eff: Effect,
+        env: dict[str, str] | None = None,
     ) -> bool | None:
         no_experiments = len(self.config.experiments)
         iteration = self.progress // no_experiments
@@ -612,7 +615,7 @@ class State:
         ):
             self.progress += 1
 
-            result = self.config.run_experiment(entry, workdir=workdir, eff=eff)
+            result = self.config.run_experiment(entry, workdir=workdir, eff=eff, env=env)
 
             if result is None:
                 return False
