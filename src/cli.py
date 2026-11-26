@@ -271,6 +271,42 @@ def interpret(
     type=click.File("w"),
     help="write the report here (disables filter)",
 )
+@click.option(
+    "--csv",
+    "--coverage-csv",
+    "csv_file",
+    type=click.Path(dir_okay=False, path_type=Path, resolve_path=True),
+    envvar="JPAMB_DYNAMIC_COVERAGE_CSV",
+    help="Append one row per dynamic-coverage-analysis method execution to FILE.",
+    metavar="FILE",
+)
+@click.option(
+    "--coverage/--no-coverage",
+    default=True,
+    help="Include bytecode coverage in the CSV.",
+)
+@click.option(
+    "--outcomes/--no-outcomes",
+    default=True,
+    help="Include observed outcomes in the CSV.",
+)
+@click.option(
+    "--timing/--no-timing",
+    default=True,
+    help="Include method analysis time in the CSV.",
+)
+@click.option(
+    "--static/--no-static",
+    "static_guidance",
+    default=True,
+    help="Use the dynamic analyzer's static Smith analysis for seeds and mutation targets.",
+)
+@click.option(
+    "--syntactic/--no-syntactic",
+    "syntactic_guidance",
+    default=True,
+    help="Use the dynamic analyzer's Java source literals, bitstring structure, and integer operations.",
+)
 @click.argument("PROGRAM", nargs=-1)
 def analyse(
     ctx,
@@ -279,6 +315,12 @@ def analyse(
     filter,
     step_wise,
     report,
+    csv_file,
+    coverage,
+    outcomes,
+    timing,
+    static_guidance,
+    syntactic_guidance,
     **kwargs,
 ):
     """Evaluate the PROGRAM as an analysis."""
@@ -320,7 +362,12 @@ def analyse(
 
     cache = ctx.suite.cache_folder(eff=eff)
 
-    state_file = cache / "analysis-state.sexp"
+    state_name = "analysis-state"
+    if not static_guidance:
+        state_name += "-no-static"
+    if not syntactic_guidance:
+        state_name += "-no-syntactic"
+    state_file = cache / f"{state_name}.sexp"
 
     state = None
 
@@ -338,12 +385,22 @@ def analyse(
     if not state:
         state = jpamb.analyse.State(config)
 
+    env = {
+        **os.environ,
+        "JPAMB_DYNAMIC_COVERAGE_CSV": str(csv_file) if csv_file is not None else "",
+        "JPAMB_DYNAMIC_COVERAGE": "1" if coverage else "0",
+        "JPAMB_DYNAMIC_OUTCOMES": "1" if outcomes else "0",
+        "JPAMB_DYNAMIC_TIMING": "1" if timing else "0",
+        "JPAMB_DYNAMIC_STATIC": "1" if static_guidance else "0",
+        "JPAMB_DYNAMIC_SYNTACTIC": "1" if syntactic_guidance else "0",
+    }
     for cont in iter(
         lambda: state.run_next(
             benchmark=benchmark,
             score_limit=score_limit,
             workdir=ctx.suite.workdir,
             eff=eff,
+            env=env,
         ),
         None,
     ):

@@ -1,7 +1,12 @@
 # dynamic analysis using coverage based fuzzing.
+import csv
+import os
 import random
-import sys
 import string
+import sys
+from pathlib import Path
+from time import perf_counter
+
 from abstractions import AbstractSmith
 from bitstring_structure import get_bitstring_structure
 from helpers.bitstring_input_generation import generate_inputs, mutate_input as mutate_bitstring
@@ -654,7 +659,12 @@ def static_smith_seeds(results: dict[str, list[AbstractSmith]]) -> list[str]:
 
 
 def analysis_inputs(
-    methodid, suite, *, smith_results=None, integer_operations: tuple[IntegerOperation, ...] = ()
+    methodid,
+    suite,
+    *,
+    smith_results=None,
+    integer_operations: tuple[IntegerOperation, ...] = (),
+    syntactic: bool = True,
 ):
     if not methodid.extension.params:
         yield jpamb.case.Input(())
@@ -664,15 +674,18 @@ def analysis_inputs(
     for _ in range(10):
         yield fuzz_input(rand, methodid)
 
-    dictionary = get_method_dictionary(methodid, suite)
-    dictionary_seeds = iter(generate_inputs_from_dict(methodid, suite))
-    template = next(dictionary_seeds, None)
-    if template is not None:
-        yield template
-        yield from arithmetic_inputs(template, dictionary.get(int, []), integer_operations)
-    yield from dictionary_seeds
-
-    bitstring_structure = get_bitstring_structure(methodid, suite)
+    if syntactic:
+        dictionary = get_method_dictionary(methodid, suite)
+        dictionary_seeds = iter(generate_inputs_from_dict(methodid, suite))
+        template = next(dictionary_seeds, None)
+        if template is not None:
+            yield template
+            yield from arithmetic_inputs(template, dictionary.get(int, []), integer_operations)
+        yield from dictionary_seeds
+        bitstring_structure = get_bitstring_structure(methodid, suite)
+    else:
+        dictionary = {}
+        bitstring_structure = []
 
     smith_idx = next( #find smith 
         (
@@ -825,6 +838,7 @@ def run_initial_seeds(
     *,
     smith_results: dict[str, list[AbstractSmith]] | None = None,
     integer_operations: tuple[IntegerOperation, ...] = (),
+    syntactic: bool = True,
 ) -> tuple[set[str], set, list[jpamb.case.Input], set[jpamb.case.Input], list]:
     """runs analysis using given inputs."""
     behaviors: set[str] = set()
@@ -835,7 +849,11 @@ def run_initial_seeds(
     if smith_results is None:
         smith_results = smith_outcomes(bc, methodid)
     for raw_seed in analysis_inputs(
-        methodid, suite, smith_results=smith_results, integer_operations=integer_operations
+        methodid,
+        suite,
+        smith_results=smith_results,
+        integer_operations=integer_operations,
+        syntactic=syntactic,
     ):
         norm_values = tuple(
             jpamb.case.Array(v.contains, tuple(v.values))
@@ -928,6 +946,44 @@ def fuzz_coverage(
     return behaviors
 
 
+def write_analysis_csv(
+    path: Path,
+    bc: jpamb.Bytecode,
+    methodid: jvm.AbsMethodID,
+    pc_coverage: set[jvmc.PC] | None,
+    behaviors: set[str] | None,
+    analysis_seconds: float | None,
+) -> None:
+    covered_instructions = total_instructions = coverage_percent = None
+    if pc_coverage is not None:
+        covered_instructions = sum(pc.method == methodid for pc in pc_coverage)
+        total_instructions = len(bc.getmethod(methodid).opcodes)
+        coverage_percent = (
+            100 * covered_instructions / total_instructions if total_instructions else 0.0
+        )
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8", newline="") as report:
+        writer = csv.writer(report)
+        if report.tell() == 0:
+            writer.writerow((
+                "method",
+                "covered_instructions",
+                "total_instructions",
+                "coverage_percent",
+                "observed_outcomes",
+                "analysis_seconds",
+            ))
+        writer.writerow((
+            methodid.encode(),
+            covered_instructions,
+            total_instructions,
+            coverage_percent,
+            ";".join(sorted(behaviors)) if behaviors is not None else None,
+            analysis_seconds,
+        ))
+
+
 def analyse():
     """The dynamic analysis: initial seeds + coverage-based fuzzing."""
     methodid = jpamb.getmethodid(
@@ -938,21 +994,32 @@ def analyse():
         for_science=True,
     )
 
+    csv_path = os.environ.get("JPAMB_DYNAMIC_COVERAGE_CSV")
+    export = csv_path != ""
+    timing = export and os.environ.get("JPAMB_DYNAMIC_TIMING") != "0"
+    start = perf_counter() if timing else None
     suite, eff = jpamb.setup()
     bc = jpamb.Bytecode(suite, eff, {})
 
     MAX_STEPS = 2000
     BUDGET = 200
 
-    dictionary = get_method_dictionary(methodid, suite)
-    structure = list(get_bitstring_structure(methodid, suite))
-    smith_results = smith_outcomes(bc, methodid)
-    integer_operations = get_integer_operations(methodid, suite)
+    static = os.environ.get("JPAMB_DYNAMIC_STATIC") != "0"
+    syntactic = os.environ.get("JPAMB_DYNAMIC_SYNTACTIC") != "0"
+    dictionary = get_method_dictionary(methodid, suite) if syntactic else {}
+    structure = list(get_bitstring_structure(methodid, suite)) if syntactic else []
+    smith_results = smith_outcomes(bc, methodid) if static else {}
+    integer_operations = get_integer_operations(methodid, suite) if syntactic else ()
 
-    #run on initial inputs from dictionary
     behaviors, pc_coverage, corpus, used_corpus, structure = run_initial_seeds(
-        bc, methodid, suite, structure, max_steps=MAX_STEPS, smith_results=smith_results,
+        bc,
+        methodid,
+        suite,
+        structure,
+        max_steps=MAX_STEPS,
+        smith_results=smith_results,
         integer_operations=integer_operations,
+        syntactic=syntactic,
     )
 
     #coverage based fuzzing.
@@ -971,6 +1038,18 @@ def analyse():
         integer_operations=integer_operations,
     )
     behaviors.update(fuzz_behaviors)
+    analysis_seconds = perf_counter() - start if start is not None else None
+
+    if export:
+        path = Path(csv_path) if csv_path else suite.stats_folder / "dynamic-coverage.csv"
+        write_analysis_csv(
+            path,
+            bc,
+            methodid,
+            pc_coverage if os.environ.get("JPAMB_DYNAMIC_COVERAGE") != "0" else None,
+            behaviors if os.environ.get("JPAMB_DYNAMIC_OUTCOMES") != "0" else None,
+            analysis_seconds,
+        )
 
     for query in jpamb.QUERIES:
         if query in behaviors:
