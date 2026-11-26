@@ -572,12 +572,12 @@ def interpret():
 
 def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Input:
     input = []
-    # 1. come up with possible inputs
+   
     for p in methodid.extension.params:
         match p:
             case jvm.Int():
                 input.append(jpamb.case.Int(rand.randint(-(1 << 31), 1 << 31)))
-                #input.append(jpamb.case.Int(696969))
+                
             case jvm.Boolean():
                 input.append(jpamb.case.Boolean(1 == rand.randint(0, 1)))
             case jvm.Array(contains=jvm.Int()):
@@ -698,6 +698,8 @@ def analysis_inputs(
                             args.append(jpamb.case.Boolean(False))
                         case jvm.Object():
                             args.append(jpamb.case.String(""))
+                        case jvm.Array(contains=ct):
+                            args.append(jpamb.case.Array(ct, ()))
                         case _:
                             args.append(jpamb.case.Int(0))
             yield jpamb.case.Input(tuple(args))
@@ -737,6 +739,27 @@ def mutate_input(
                 new_values.append(jpamb.case.Int(mutate_integer(num, integer_operations)))
             case jpamb.case.Boolean(b):
                 new_values.append(jpamb.case.Boolean(not b))
+            case jpamb.case.Array(contains=ct, values=arr_vals):
+                vals_list = list(arr_vals)
+                choice = random.choice(["extend", "shorten", "modify", "keep"])
+                match choice:
+                    case "extend" if len(vals_list) < 20:
+                        if ct == jvm.Char():
+                            cand = random.choice(string.ascii_letters)
+                        else:
+                            cand = random.choice(dictionary.get(int, [0, 1])) if dictionary else 0
+                        vals_list.append(cand)
+                    case "shorten" if vals_list:
+                        vals_list.pop()
+                    case "modify" if vals_list:
+                        idx = random.randrange(len(vals_list))
+                        if ct == jvm.Char():
+                            vals_list[idx] = random.choice(string.ascii_letters)
+                        elif isinstance(vals_list[idx], int):
+                            vals_list[idx] = mutate_integer(vals_list[idx], integer_operations)
+                    case _:
+                        pass  
+                new_values.append(jpamb.case.Array(ct, tuple(vals_list)))
             case other:
                 new_values.append(other)
     return jpamb.case.Input(tuple(new_values))

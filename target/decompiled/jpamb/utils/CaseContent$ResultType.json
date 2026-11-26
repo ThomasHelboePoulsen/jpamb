@@ -1473,7 +1473,7 @@
             "opr": "instanceof",
             "type": {
               "kind": "class",
-              "name": "java/lang/ArrayIndexOutOfBoundsException"
+              "name": "java/lang/IndexOutOfBoundsException"
             }
           },
           {

@@ -563,7 +563,7 @@ def interpret():
 
 def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Input:
     input = []
-    # 1. come up with possible inputs
+   
     for p in methodid.extension.params:
         match p:
             case jvm.Int():

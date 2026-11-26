@@ -49,10 +49,10 @@ public class BitOperations {
     @Case("(32) -> ok")
     @Case("(128) -> out of bounds")
     public static void DrawInt(int count) {
-        String bits = "10010101010101010101010110110101010100110101010101111000001010101010101110100111011001110101001001001";
+        char[] bits = "10010101010101010101010110110101010100110101010101111000001010101010101110100111011001110101001001001".toCharArray();
         int value = 0;
         for (int i = 0; i < count; i++) {
-            value = (value << 1) | (bits.charAt(i) == '0' ? 0 : 1);
+            value = (value << 1) | (bits[i] == '0' ? 0 : 1);
         }
         assert value < 0 || value == 2;
     }
