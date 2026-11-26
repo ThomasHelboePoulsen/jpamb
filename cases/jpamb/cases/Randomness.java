@@ -336,4 +336,11 @@ public class Randomness {
         }
         assert sum != 12;
     }
+
+    @Case("(r'0000000010001001') -> assertion error")
+    @Case("(r'0000000000000000') -> ok")
+    public static void magicComputedTarget(Smith smith) {
+        int val = smith.draw(16);
+        assert val != 100 + 37;
+    }
 }
