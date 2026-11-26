@@ -53,11 +53,28 @@ jpamb.cases.Loops.forever:()V                                () -> *
 jpamb.cases.Loops.neverAsserts:()V                           () -> *
 jpamb.cases.Loops.neverDivides:()I                           () -> *
 jpamb.cases.Loops.terminates:()V                             () -> assertion error
+jpamb.cases.Randomness.arrayWithRandomIndex:([ILjpamb/utils/Smith;)V ([I:0, 20], r'0000') -> assertion error
+jpamb.cases.Randomness.arrayWithRandomIndex:([ILjpamb/utils/Smith;)V ([I:10, 20], r'0000') -> ok
+jpamb.cases.Randomness.arrayWithRandomIndex:([ILjpamb/utils/Smith;)V ([I:10, 20], r'0001') -> ok
+jpamb.cases.Randomness.arrayWithRandomIndex:([ILjpamb/utils/Smith;)V ([I:10, 20], r'0010') -> out of bounds
+jpamb.cases.Randomness.arrayWithRandomIndex:([ILjpamb/utils/Smith;)V ([I:], r'0000') -> out of bounds
+jpamb.cases.Randomness.assertGreaterThanRandom:(ILjpamb/utils/Smith;)V (50, r'00010100') -> ok
+jpamb.cases.Randomness.assertGreaterThanRandom:(ILjpamb/utils/Smith;)V (50, r'00110010') -> assertion error
+jpamb.cases.Randomness.assertGreaterThanRandom:(ILjpamb/utils/Smith;)V (50, r'01100100') -> assertion error
+jpamb.cases.Randomness.assertGreaterThanRandomConst:(Ljpamb/utils/Smith;)V (r'00010100') -> ok
+jpamb.cases.Randomness.assertGreaterThanRandomConst:(Ljpamb/utils/Smith;)V (r'01100100') -> assertion error
+jpamb.cases.Randomness.assertGreaterThanRandomConst:(Ljpamb/utils/Smith;)V (r'10000000') -> assertion error
 jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V  (r'0000') -> assertion error
 jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V  (r'0101') -> divide by zero
 jpamb.cases.Randomness.branchOverlap:(Ljpamb/utils/Smith;)V  (r'010110000000001') -> ok
 jpamb.cases.Randomness.compareInts:(Ljpamb/utils/Smith;)V    (r'1') -> assertion error
 jpamb.cases.Randomness.compareInts:(Ljpamb/utils/Smith;)V    (r'100000000000000000000000000000001') -> ok
+jpamb.cases.Randomness.deepSequentialSteps:(Ljpamb/utils/Smith;)V (r'0') -> ok
+jpamb.cases.Randomness.deepSequentialSteps:(Ljpamb/utils/Smith;)V (r'1000010100') -> ok
+jpamb.cases.Randomness.deepSequentialSteps:(Ljpamb/utils/Smith;)V (r'1001010010100001') -> assertion error
+jpamb.cases.Randomness.divideByRandom:(Ljpamb/utils/Smith;)V (r'00000000') -> divide by zero
+jpamb.cases.Randomness.divideByRandom:(Ljpamb/utils/Smith;)V (r'00000010') -> ok
+jpamb.cases.Randomness.divideByRandom:(Ljpamb/utils/Smith;)V (r'00010100') -> assertion error
 jpamb.cases.Randomness.draw34Bits:(Ljpamb/utils/Smith;)V     (r'') -> assertion error
 jpamb.cases.Randomness.draw34Bits:(Ljpamb/utils/Smith;)V     (r'10000000000000000000000000000000011') -> ok
 jpamb.cases.Randomness.drawDependsOnArg:(ILjpamb/utils/Smith;)I (0, r'0') -> ok
@@ -69,15 +86,67 @@ jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V        (r'010110000000001'
 jpamb.cases.Randomness.drawInt:(Ljpamb/utils/Smith;)V        (r'1') -> divide by zero
 jpamb.cases.Randomness.drawIntOverflow:(Ljpamb/utils/Smith;)V (r'') -> ok
 jpamb.cases.Randomness.drawIntOverflow:(Ljpamb/utils/Smith;)V (r'1111111111111111111111111111111') -> assertion error
+jpamb.cases.Randomness.dynamicBranchRead:(Ljpamb/utils/Smith;)V (r'0000101001') -> ok
+jpamb.cases.Randomness.dynamicBranchRead:(Ljpamb/utils/Smith;)V (r'001010000') -> assertion error
+jpamb.cases.Randomness.dynamicBranchRead:(Ljpamb/utils/Smith;)V (r'10000000111110100') -> assertion error
+jpamb.cases.Randomness.dynamicBranchRead:(Ljpamb/utils/Smith;)V (r'100000111110100001') -> ok
+jpamb.cases.Randomness.largeRandomArrayIndex:(Ljpamb/utils/Smith;)V (r'0000000000') -> ok
+jpamb.cases.Randomness.largeRandomArrayIndex:(Ljpamb/utils/Smith;)V (r'1111100111') -> ok
+jpamb.cases.Randomness.largeRandomArrayIndex:(Ljpamb/utils/Smith;)V (r'1111101000') -> out of bounds
+jpamb.cases.Randomness.largeRandomArrayIndex:(Ljpamb/utils/Smith;)V (r'1111111111') -> out of bounds
 jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V (r'0000') -> *
 jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V (r'00001') -> assertion error
 jpamb.cases.Randomness.loopUntilHeads:(Ljpamb/utils/Smith;)V (r'0001') -> ok
+jpamb.cases.Randomness.magicRandomConstant:(Ljpamb/utils/Smith;)V (r'0000000000000000') -> ok
+jpamb.cases.Randomness.magicRandomConstant:(Ljpamb/utils/Smith;)V (r'0011010000111001') -> assertion error
+jpamb.cases.Randomness.magicSequenceAccumulator:(Ljpamb/utils/Smith;)V (r'01011111') -> ok
+jpamb.cases.Randomness.magicSequenceAccumulator:(Ljpamb/utils/Smith;)V (r'11111111') -> assertion error
+jpamb.cases.Randomness.nestedBranches:(Ljpamb/utils/Smith;)V (r'0000000000') -> assertion error
+jpamb.cases.Randomness.nestedBranches:(Ljpamb/utils/Smith;)V (r'01') -> ok
+jpamb.cases.Randomness.nestedBranches:(Ljpamb/utils/Smith;)V (r'100010') -> ok
+jpamb.cases.Randomness.nestedBranches:(Ljpamb/utils/Smith;)V (r'101111') -> assertion error
+jpamb.cases.Randomness.nestedBranches:(Ljpamb/utils/Smith;)V (r'1100010100') -> assertion error
+jpamb.cases.Randomness.nestedBranches:(Ljpamb/utils/Smith;)V (r'1101100100') -> ok
+jpamb.cases.Randomness.randomAdd:(Ljpamb/utils/Smith;I)V     (r'00000000000000000000000010101110', 12) -> assertion error
+jpamb.cases.Randomness.randomAdd:(Ljpamb/utils/Smith;I)V     (r'00000000000000000000000010101110', 30) -> ok
+jpamb.cases.Randomness.randomArrayIndex:(Ljpamb/utils/Smith;)V (r'0000') -> ok
+jpamb.cases.Randomness.randomArrayIndex:(Ljpamb/utils/Smith;)V (r'0100') -> ok
+jpamb.cases.Randomness.randomArrayIndex:(Ljpamb/utils/Smith;)V (r'0101') -> out of bounds
+jpamb.cases.Randomness.randomArrayIndex:(Ljpamb/utils/Smith;)V (r'1111') -> out of bounds
+jpamb.cases.Randomness.randomArraySizeAndIndex:(Ljpamb/utils/Smith;)V (r'00000000') -> out of bounds
+jpamb.cases.Randomness.randomArraySizeAndIndex:(Ljpamb/utils/Smith;)V (r'00100000') -> ok
+jpamb.cases.Randomness.randomArraySizeAndIndex:(Ljpamb/utils/Smith;)V (r'00100001') -> ok
+jpamb.cases.Randomness.randomArraySizeAndIndex:(Ljpamb/utils/Smith;)V (r'00100010') -> out of bounds
 jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V   (r'01010101') -> assertion error
 jpamb.cases.Randomness.randomBranch:(Ljpamb/utils/Smith;)V   (r'100000') -> ok
+jpamb.cases.Randomness.randomCompound:(Ljpamb/utils/Smith;)V (r'00000010000101000') -> ok
+jpamb.cases.Randomness.randomCompound:(Ljpamb/utils/Smith;)V (r'00000010000101001') -> assertion error
+jpamb.cases.Randomness.randomCompound:(Ljpamb/utils/Smith;)V (r'00001111000101001') -> ok
+jpamb.cases.Randomness.randomCompound:(Ljpamb/utils/Smith;)V (r'00001111011001001') -> assertion error
+jpamb.cases.Randomness.randomDiff:(Ljpamb/utils/Smith;)V     (r'0000010100001111') -> assertion error
+jpamb.cases.Randomness.randomDiff:(Ljpamb/utils/Smith;)V     (r'0000111100000101') -> ok
+jpamb.cases.Randomness.randomDiv:(Ljpamb/utils/Smith;)V      (r'0000000000000000') -> divide by zero
+jpamb.cases.Randomness.randomDiv:(Ljpamb/utils/Smith;)V      (r'0000001000000000') -> divide by zero
+jpamb.cases.Randomness.randomDiv:(Ljpamb/utils/Smith;)V      (r'0000101000000010') -> ok
+jpamb.cases.Randomness.randomDiv:(Ljpamb/utils/Smith;)V      (r'0010100000000010') -> assertion error
+jpamb.cases.Randomness.randomDivConst:(Ljpamb/utils/Smith;)V (r'00000100') -> assertion error
+jpamb.cases.Randomness.randomDivConst:(Ljpamb/utils/Smith;)V (r'00010100') -> ok
 jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V    (r'0') -> ok
 jpamb.cases.Randomness.randomIndex:(Ljpamb/utils/Smith;)V    (r'1') -> out of bounds
+jpamb.cases.Randomness.randomLogic:(Ljpamb/utils/Smith;)V    (r'000') -> assertion error
+jpamb.cases.Randomness.randomLogic:(Ljpamb/utils/Smith;)V    (r'011') -> ok
+jpamb.cases.Randomness.randomLogic:(Ljpamb/utils/Smith;)V    (r'100') -> ok
+jpamb.cases.Randomness.randomLogic:(Ljpamb/utils/Smith;)V    (r'110') -> assertion error
+jpamb.cases.Randomness.randomMultiply:(Ljpamb/utils/Smith;I)V (r'00000000000000000000000000000101', 10) -> ok
+jpamb.cases.Randomness.randomMultiply:(Ljpamb/utils/Smith;I)V (r'00000000000000000000000000000101', 25) -> assertion error
 jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V     (r'0') -> null pointer
 jpamb.cases.Randomness.randomNull:(Ljpamb/utils/Smith;)V     (r'1') -> ok
+jpamb.cases.Randomness.randomProduct:(Ljpamb/utils/Smith;)V  (r'0000001000000011') -> ok
+jpamb.cases.Randomness.randomProduct:(Ljpamb/utils/Smith;)V  (r'0000101000001011') -> assertion error
+jpamb.cases.Randomness.randomSubtract:(Ljpamb/utils/Smith;I)V (r'00000000000000000000000000010100', 10) -> ok
+jpamb.cases.Randomness.randomSubtract:(Ljpamb/utils/Smith;I)V (r'00000000000000000000000000010100', 30) -> assertion error
+jpamb.cases.Randomness.randomSum:(Ljpamb/utils/Smith;)V      (r'00000000000000000000000010101110001000010010010001001000101011101') -> assertion error
+jpamb.cases.Randomness.randomSum:(Ljpamb/utils/Smith;)V      (r'10000000100000100000000010101110001000010010010001001000101011101') -> ok
 jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V    (r'0') -> *
 jpamb.cases.Randomness.spinOnTails:(Ljpamb/utils/Smith;)V    (r'1') -> ok
 jpamb.cases.Randomness.twoDraws:(Ljpamb/utils/Smith;)V       (r'10') -> ok
