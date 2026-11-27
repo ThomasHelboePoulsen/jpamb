@@ -206,8 +206,8 @@ def mutate_input(
         mutate_struct(bits, structure, dictionary, rand)
         return "".join(bits)
 
-    # Basic mutations without truncate (capping append length to avoid bloat)
-    choice = rand.choice(["flip", "append"]) if (bits and len(bits) < 128) else ("flip" if bits else "append")
+    # Basic mutations without truncate
+    choice = rand.choice(["flip", "append"]) if bits else "append"
     match choice:
         case "flip":
             idx = rand.randrange(len(bits))
