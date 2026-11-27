@@ -5,7 +5,7 @@ import subprocess
 import sys
 from abc import ABC, abstractmethod
 from collections import OrderedDict, defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Self
@@ -277,13 +277,16 @@ class Config:
         timeout: float,
         iterations: int,
         eff: Effect,
+        workdir: Path | None = None,
+        env: dict[str, str] | None = None,
     ) -> "Self":
-     
         info = AnalysisInfo.from_cmd(
             cmd,
             timeout=timeout,
             eff=eff,
             context="analysis",
+            cwd=workdir,
+            env=env,
         )
 
         return cls(
@@ -302,33 +305,58 @@ class Config:
         pedantic: bool = True,
         eff: Effect,
     ) -> Result | None:
+        result, _, _ = self.run_experiment_with_status(
+            methodid, workdir=workdir, pedantic=pedantic, eff=eff
+        )
+        return result
+
+    def run_experiment_with_status(
+        self,
+        methodid: Entry,
+        *,
+        workdir: Path,
+        eff: Effect,
+        pedantic: bool = True,
+        env: dict[str, str] | None = None,
+    ) -> tuple[Result | None, str, str | None]:
         try:
             experiment = eff.experiment(
                 self.cmd + (methodid.encode(),),
                 timeout=self.timeout,
                 cwd=workdir,
+                **({"env": env} if env is not None else {}),
             )
-        except subprocess.CalledProcessError as e:
-            eff.warning(f"Ran {shlex.join(self.cmd)} info, and got error:\n{e.stderr}")
-            return None
-        except subprocess.TimeoutExpired as e:
-            eff.warning(
-                f"Ran {shlex.join(self.cmd)} info, and timed out after {e.timeout} seconds"
-            )
-            return None
+        except subprocess.TimeoutExpired as error:
+            message = f"Analyzer timed out after {error.timeout} seconds"
+            eff.warning(message)
+            return None, "timeout", message
+        except (subprocess.CalledProcessError, OSError) as error:
+            message = str(error)
+            eff.warning(getattr(error, "stderr", None) or message)
+            return None, "failed", message
 
-        response, warns = Response.parse(experiment.output)
+        try:
+            response, warns = Response.parse(experiment.output)
+        except ValueError as error:
+            message = f"Invalid analyzer prediction: {error}"
+            eff.warning(message)
+            return None, "failed", message
+        if missing := set(QUERIES) - response.predictions.keys():
+            warns.append(f"Missing predictions for {', '.join(sorted(missing))}")
 
-        if warns:
-            for warn in warns:
-                eff.warning(warn)
-            if pedantic:
-                return None
+        for warning in warns:
+            eff.warning(warning)
+        if warns and pedantic:
+            return None, "failed", "; ".join(warns)
 
-        return Result(
-            response,
-            Duration(experiment.time_ns, experiment.time_relative),
-            tuple(experiment.calibrations_ns),
+        return (
+            Result(
+                response,
+                Duration(experiment.time_ns, experiment.time_relative),
+                tuple(experiment.calibrations_ns),
+            ),
+            "success",
+            None,
         )
 
 
@@ -595,8 +623,11 @@ class State:
         score_limit: float | None = None,
         workdir: Path,
         eff: Effect,
+        execute: Callable[[Entry], Result | None] | None = None,
     ) -> bool | None:
         no_experiments = len(self.config.experiments)
+        if not no_experiments:
+            return None
         iteration = self.progress // no_experiments
 
         if iteration >= self.config.iterations:
@@ -612,7 +643,11 @@ class State:
         ):
             self.progress += 1
 
-            result = self.config.run_experiment(entry, workdir=workdir, eff=eff)
+            result = (
+                execute(entry)
+                if execute is not None
+                else self.config.run_experiment(entry, workdir=workdir, eff=eff)
+            )
 
             if result is None:
                 return False

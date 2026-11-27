@@ -1,12 +1,18 @@
 # dynamic analysis using coverage based fuzzing.
-from collections.abc import Iterable
+from dataclasses import asdict
+import json
+import os
+from pathlib import Path
 import random
-import sys
 import string
+from time import perf_counter
+
 from abstractions import AbstractSmith
 import jpamb
 import jvm
 import jvm.state as jvmc
+from jpamb.evaluation import ComponentSettings, MEASUREMENT_ENV
+from static import SMITH_TYPE
 
 from helpers.bitstring_input_generation import (
     generate_bitstring_inputs,
@@ -126,11 +132,14 @@ def execute_input(
     methodid: jvm.AbsMethodID,
     inp: jpamb.case.Input,
     max_steps: int = 2000,
-) -> tuple[set, str | None, list[tuple[str, int, int]]]:
-    """Runs a single input through the dynamic interpreter, tracking coverage, behavior, and dynamic reads."""
+    *,
+    record_reads: bool = True,
+) -> tuple[set[jvmc.PC], str | None, list[tuple[str, int, int]]]:
+    """Interpret one input, tracking coverage, behavior, and optionally Smith reads."""
     state = initial(bc, methodid, inp)
     recorded_reads: list[tuple[str, int, int]] = []
-    state.recorded_reads = recorded_reads
+    if record_reads:
+        state.recorded_reads = recorded_reads
     seen_states = set()
     snapshots = ExecutionSnapshots()
     run_pcs = set()
@@ -218,7 +227,9 @@ def run_initial_seeds(
         if seed in ctx.used_corpus:
             continue
         ctx.used_corpus.add(seed)
-        run_pcs, behavior, recorded = execute_input(bc, methodid, seed, max_steps)
+        run_pcs, behavior, recorded = execute_input(
+            bc, methodid, seed, max_steps, record_reads=ctx.use_dynamic_structure
+        )
         if behavior:
             ctx.behaviors.add(behavior)
 
@@ -298,7 +309,9 @@ def coverage_based_fuzzing(
             continue
         ctx.used_corpus.add(mutant)
 
-        run_pcs, behavior, recorded = execute_input(bc, methodid, mutant, max_steps)
+        run_pcs, behavior, recorded = execute_input(
+            bc, methodid, mutant, max_steps, record_reads=ctx.use_dynamic_structure
+        )
         if behavior:
             ctx.behaviors.add(behavior)
             # Retire the outcome that actually occurred, even on an ordinary mutation.
@@ -321,6 +334,8 @@ def coverage_based_fuzzing(
 
 def analyse():
     """The dynamic analysis: initial seeds + coverage-based fuzzing."""
+    measurement_path = os.environ.get(MEASUREMENT_ENV, "")
+    started = perf_counter() if measurement_path else None
     methodid = jpamb.getmethodid(
         "dynamic",
         "1.0",
@@ -335,9 +350,27 @@ def analyse():
     MAX_STEPS = 2000
     BUDGET = 200
 
-    ctx = init_context(methodid, suite, bc)
+    settings = ComponentSettings.from_environment()
+    ctx = init_context(methodid, suite, bc, settings=settings)
     run_initial_seeds(bc, methodid, ctx, max_steps=MAX_STEPS)
     coverage_based_fuzzing(bc, methodid, ctx, budget=BUDGET, max_steps=MAX_STEPS)
+
+    if started is not None:
+        total_instructions = len(bc.getmethod(methodid).opcodes)
+        analysis_seconds = perf_counter() - started
+        covered_instructions = sum(pc.method == methodid for pc in ctx.pc_coverage)
+        coverage_percent = 100 * covered_instructions / total_instructions if total_instructions else 0.0
+        measurement = {
+            "method": methodid.encode(),
+            "configuration": asdict(settings),
+            "has_smith": SMITH_TYPE in methodid.extension.params,
+            "covered_instructions": covered_instructions,
+            "total_instructions": total_instructions,
+            "coverage_percent": coverage_percent,
+            "observed_outcomes": sorted(ctx.behaviors),
+            "analysis_seconds": analysis_seconds,
+        }
+        Path(measurement_path).write_text(json.dumps(measurement), encoding="utf-8")
 
     for query in jpamb.QUERIES:
         if query in ctx.behaviors:

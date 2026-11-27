@@ -1,11 +1,12 @@
 from dataclasses import dataclass, field
 from itertools import islice
-import os
 import random
 import string
 
 import jpamb
 import jvm
+import jvm.state as jvmc
+from jpamb.evaluation import ComponentSettings
 from abstractions import AbstractSmith
 from static import SMITH_TYPE, abstract_analysis_results
 
@@ -37,12 +38,8 @@ class FuzzContext:
     corpus: list[jpamb.case.Input] = field(default_factory=list)
     used_corpus: set[jpamb.case.Input] = field(default_factory=set)
     queued_inputs: list[jpamb.case.Input] = field(default_factory=list)
-    pc_coverage: set = field(default_factory=set)
+    pc_coverage: set[jvmc.PC] = field(default_factory=set)
     behaviors: set[str] = field(default_factory=set)
-
-
-def _env_disabled(name: str) -> bool:
-    return os.environ.get(name, "").lower() in ("1", "true", "yes")
 
 
 def fuzz_input(rand: random.Random, methodid: jvm.AbsMethodID) -> jpamb.case.Input:
@@ -191,7 +188,7 @@ def analysis_inputs(
         None,
     )
     if smith_idx is not None:
-        guided = static_smith_seeds(smith_results)
+        guided = static_smith_seeds(smith_results) if smith_results else []
         structured = generate_bitstring_inputs(structure, dictionary) if structure else []
         for bits in dict.fromkeys([*guided, *structured]):
             args = []
@@ -217,17 +214,17 @@ def init_context(
     methodid: jvm.AbsMethodID,
     suite: jpamb.Suite,
     bc: jpamb.Bytecode,
+    *,
+    settings: ComponentSettings | None = None,
 ) -> FuzzContext:
-    """Initializes and returns the fuzzing context, applying any environment configuration overrides."""
-    use_dictionary = not _env_disabled("DISABLE_DICTIONARY")
-    use_syntactic_structure = not _env_disabled("DISABLE_SYNTACTIC_STRUCTURE")
-    use_static_seeds = not _env_disabled("DISABLE_STATIC_SEEDS")
-    use_dynamic_structure = not _env_disabled("DISABLE_DYNAMIC_STRUCTURE")
+    """Initialize fuzzing with the enabled guidance components."""
+    if settings is None:
+        settings = ComponentSettings.from_environment()
 
-    integer_operations = get_integer_operations(methodid, suite) if use_dictionary else ()
-    dictionary = get_method_dictionary(methodid, suite, integer_operations) if use_dictionary else {}
-    structure = list(get_bitstring_structure(methodid, suite)) if use_syntactic_structure else []
-    smith_results = smith_outcomes(bc, methodid) if use_static_seeds else {}
+    integer_operations = get_integer_operations(methodid, suite) if settings.dictionary else ()
+    dictionary = get_method_dictionary(methodid, suite, integer_operations) if settings.dictionary else {}
+    structure = list(get_bitstring_structure(methodid, suite)) if settings.syntactic_structure else []
+    smith_results = smith_outcomes(bc, methodid) if settings.static else {}
 
     initial_seeds = list(
         analysis_inputs(
@@ -246,5 +243,5 @@ def init_context(
         smith_results=smith_results,
         integer_operations=integer_operations,
         initial_seeds=initial_seeds,
-        use_dynamic_structure=use_dynamic_structure,
+        use_dynamic_structure=settings.dynamic_structure,
     )

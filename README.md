@@ -28,6 +28,7 @@ To get started with this repository, follow the following guides:
 - To get inspired you can take a look at the [Partial Solutions](solutions/). They
   are written in Python so to run them check out the [Python](docs/python.md) section.
 - To test a (concrete or abstract) interpreter, take a look at the [Interpret](docs/interpret.md) section.
+- To measure and compare analyzer configurations, see [Dynamic coverage evaluation](docs/dynamic-coverage-evaluation.md).
 - To figure out how to extend the benchmark suite consult the [Extending The Benchmark Suite](docs/extending-jpamb.md) section.
 
 ## Supported Languages

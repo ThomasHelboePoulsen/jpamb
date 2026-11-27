@@ -3,8 +3,13 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
+from csv import Error as CSVError
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from time import perf_counter
+from uuid import uuid4
 
 import click
 
@@ -12,6 +17,15 @@ import jpamb
 import jpamb.interpret
 import jvm
 import sexpr
+from jpamb.analysis_evaluation import EvaluationSession, checkpoint_path
+from jpamb.evaluation import (
+    MEASUREMENT_ENV,
+    ComponentSettings,
+    EvaluationRun,
+    append_run,
+    comparison_report,
+    run_metadata_path,
+)
 from jpamb.report import write_report
 from jpamb.utils import DockerRunner, Effect
 
@@ -21,6 +35,7 @@ class Context:
     eff: Effect
     docker_image: str
     suite: jpamb.Suite
+    started: float = dataclasses.field(default_factory=perf_counter)
 
 
 def re_parser(ctx_, parms_, expr):
@@ -56,6 +71,7 @@ def re_parser(ctx_, parms_, expr):
 @click.pass_context
 def cli(ctx, workdir: Path, verbose, docker_image):
     """This is the jpamb main entry point."""
+    started = perf_counter()
     eff = Effect(sys.stderr)
     eff.level = 25 - verbose * 10
     suite = jpamb.Suite.from_workdir(workdir)
@@ -63,6 +79,7 @@ def cli(ctx, workdir: Path, verbose, docker_image):
         eff=eff,
         docker_image=docker_image,
         suite=suite,
+        started=started,
     )
     ctx.obj.eff.info(f"Setup suite in {workdir}")
 
@@ -236,6 +253,7 @@ def interpret(
 @click.option(
     "--iterations",
     "-N",
+    type=click.IntRange(min=1),
     show_default=True,
     default=3,
     help="number of iterations.",
@@ -271,7 +289,28 @@ def interpret(
     type=click.File("w"),
     help="write the report here (disables filter)",
 )
-@click.argument("PROGRAM", nargs=-1)
+@click.option("--no-static", is_flag=True, help="Disable static Smith guidance.")
+@click.option(
+    "--no-dictionary",
+    is_flag=True,
+    help="Disable source dictionary guidance.",
+)
+@click.option(
+    "--no-syntactic-structure",
+    is_flag=True,
+    help="Disable source-inferred Smith structure.",
+)
+@click.option(
+    "--no-dynamic-structure",
+    is_flag=True,
+    help="Disable Smith structure learned during execution.",
+)
+@click.option(
+    "--csv",
+    type=click.Path(dir_okay=False, path_type=Path, resolve_path=True),
+    help="Append evaluation measurements and a companion run summary.",
+)
+@click.argument("PROGRAM", nargs=-1, required=True)
 def analyse(
     ctx,
     program,
@@ -279,15 +318,18 @@ def analyse(
     filter,
     step_wise,
     report,
-    **kwargs,
+    no_static,
+    no_dictionary,
+    no_syntactic_structure,
+    no_dynamic_structure,
+    csv,
+    iterations,
+    timeout,
 ):
     """Evaluate the PROGRAM as an analysis."""
 
     eff = ctx.eff
-
-    if ctx.suite.workdir != Path.cwd():
-        eff.warning(f"Changing to {ctx.suite.workdir}")
-        os.chdir(ctx.suite.workdir)
+    workdir = ctx.suite.workdir
 
     if step_wise and report:
         raise click.UsageError("Cannot produce report in step wise mode")
@@ -295,74 +337,130 @@ def analyse(
     if filter != re.compile(".*") and report:
         raise click.UsageError(f"Cannot produce report in while filtering {filter}")
 
-    benchmark = ctx.suite.benchmark(eff=eff)
+    if csv is not None and report and Path(report.name).resolve() in {
+        csv,
+        run_metadata_path(csv).resolve(),
+    }:
+        raise click.UsageError("--report must use a different path from the CSV and run metadata")
 
+    defaults = ComponentSettings.from_environment()
+    settings = ComponentSettings(
+        static=defaults.static and not no_static,
+        dictionary=defaults.dictionary and not no_dictionary,
+        syntactic_structure=defaults.syntactic_structure and not no_syntactic_structure,
+        dynamic_structure=defaults.dynamic_structure and not no_dynamic_structure,
+    )
+    env = {**os.environ, **settings.environment()}
+    env.pop(MEASUREMENT_ENV, None)
+    benchmark = ctx.suite.benchmark(eff=eff)
     entries = []
     for entry in benchmark.entries():
-        if not filter.search(str(entry)):
+        if filter.search(str(entry)):
+            entries.append(entry)
+        else:
             eff.info(f"Skipping {entry}, excluded by filter")
-            continue
 
-        entries.append(entry)
+    entries = list(dict.fromkeys(entries))
+    run_id = uuid4().hex
+    expected_methods = tuple(entry.encode() for entry in entries)
+
+    def record(status, *, rows=(), official=None, error=None):
+        run = EvaluationRun(
+            run_id=run_id,
+            settings=settings,
+            iterations=iterations,
+            status=status,
+            measurements=rows,
+            evaluation_elapsed_seconds=perf_counter() - ctx.started,
+            error=error,
+            official=official,
+            expected_methods=expected_methods,
+        )
+        if csv is not None:
+            try:
+                append_run(csv, run)
+            except (CSVError, OSError, ValueError) as exc:
+                raise click.ClickException(f"Could not save evaluation: {exc}") from exc
+        return run
+
+    if not entries:
+        message = "No benchmark methods match the filter"
+        record("failed", error=message)
+        raise click.ClickException(message)
 
     try:
         config = jpamb.analyse.Config.from_cmd(
             program,
             entries,
             eff=eff,
-            **kwargs,
+            iterations=iterations,
+            timeout=timeout,
+            workdir=workdir,
+            env=env,
         )
-        
-    except Exception as e:  # ruff: ignore[BLE001]
-        eff.debug(f"Error: {e}")
-        eff.error("Failed to instantiate config")
-        sys.exit(1)
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        status = "timeout" if isinstance(exc, subprocess.TimeoutExpired) else "failed"
+        message = f"Could not initialize analyzer: {exc}"
+        record(status, error=message)
+        raise click.ClickException(message) from exc
 
-    cache = ctx.suite.cache_folder(eff=eff)
-
-    state_file = cache / "analysis-state.sexp"
-
-    state = None
-
-    if step_wise:
+    state_file = (
+        checkpoint_path(
+            ctx.suite.cache_folder(eff=eff), config, settings, benchmark, score_limit
+        )
+        if step_wise
+        else None
+    )
+    session = EvaluationSession(jpamb.analyse.State(config), settings)
+    if state_file is not None:
         try:
-            code = state_file.read_text()
-            state_cc = sexpr.from_string(code)[0]
-            state = jpamb.analyse.State.from_sexpr(state_cc)
-            if state.config != config:
-                eff.warning("Old state ran with other config, restarting...")
-                state = None
-        except FileNotFoundError:
-            eff.debug("No analysis cache")
+            session = EvaluationSession.resume(state_file, config, settings)
+        except (OSError, ValueError, KeyError, IndexError, sexpr.ParseError) as exc:
+            raise click.ClickException(f"Could not read analysis checkpoint {state_file}: {exc}") from exc
 
-    if not state:
-        state = jpamb.analyse.State(config)
+    paused = False
+    with TemporaryDirectory(prefix="jpamb-analysis-") as directory:
+        for cont in iter(
+            lambda: session.run_next(
+                benchmark=benchmark,
+                score_limit=score_limit,
+                workdir=workdir,
+                eff=eff,
+                measurement_dir=Path(directory),
+                env=env,
+            ),
+            None,
+        ):
+            if step_wise and not cont:
+                paused = True
+                failed_measurement = session.measurements.pop()
+                session.state.progress -= 1
+                session.checkpoint(state_file)
+                eff.info(f"Saved state to {state_file}")
+                session.measurements.append(failed_measurement)
+                break
 
-    for cont in iter(
-        lambda: state.run_next(
-            benchmark=benchmark,
-            score_limit=score_limit,
-            workdir=ctx.suite.workdir,
-            eff=eff,
-        ),
-        None,
-    ):
-        if step_wise and not cont:
-            state.progress -= 1
-            eff.error("Stopping early")
-            state_file.write_text(sexpr.pretty(sexpr.sexpr(state), indent=2))
-            eff.info(f"Saved state to {state_file!r}")
-            return
-
-    try:
-        state_file.unlink()
-    except FileNotFoundError:
-        pass
-
-    summary = state.summary()
+    summary = session.state.summary()
     results = summary.score_results(benchmark=benchmark, eff=eff)
-    results.display()
+    rows, official = session.scored(benchmark, results)
+    status, error = "success", None
+    for row in rows:
+        if (row.status != "success" or row.error is not None) and (
+            status == "success" or row.status == "timeout"
+        ):
+            status = "timeout" if row.status == "timeout" else "failed"
+            error = row.error
+    if paused:
+        error = f"Analysis paused at a failed method. {error}"
+    run = record(status, rows=rows, official=official, error=error)
+    if state_file is not None and not paused:
+        state_file.unlink(missing_ok=True)
+    results.display(file=sys.stdout)
+    if csv is not None or any(row.analysis_seconds is not None for row in rows):
+        click.echo(comparison_report([run]))
 
+    if status != "success":
+        raise click.ClickException(error or "Analysis did not complete successfully")
     if report:
         if results.invalid is not None:
             eff.error(results.invalid)

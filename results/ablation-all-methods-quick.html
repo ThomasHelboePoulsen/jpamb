@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JPAMB ablation results</title>
+<style>
+  body {
+    margin: 0; background: #f4f6fa; color: #182538;
+    font: 16px/1.5 system-ui, sans-serif;
+  }
+  main { max-width: 72rem; margin: auto; padding: 2rem clamp(1rem, 4vw, 3rem); }
+  h1 { font-size: 2rem; margin: 0 0 1.25rem; }
+  h2 { font-size: 1.25rem; margin-top: 2.25rem; }
+  .notes { max-width: 72ch; color: #495a6e; }
+  .table-scroll {
+    overflow: auto; max-height: 65vh; background: white;
+    border: 1px solid #cdd7e5; border-radius: .5rem;
+  }
+  table { border-spacing: 0; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: .65rem .9rem; text-align: left; border-bottom: 1px solid #dce4ee; }
+  thead th { position: sticky; top: 0; background: #203853; color: white; }
+  tbody th { font-weight: 600; overflow-wrap: anywhere; }
+  tbody tr:nth-child(even) { background: #f5f8fc; }
+  tbody tr:hover { background: #e9f2ff; }
+  tbody tr:last-child > * { border-bottom: 0; }
+  #summary th, #summary td, #coverage th, #coverage td, #methods td {
+    white-space: nowrap;
+  }
+  #summary td:nth-child(-n+5) { text-align: center; }
+  #methods td:first-of-type { white-space: normal; overflow-wrap: anywhere; }
+  label { display: block; margin: 0 0 .75rem; }
+  input {
+    margin-left: .5rem; padding: .35rem .55rem; width: min(18rem, 50%);
+    border: 1px solid #8c9eb4; border-radius: .35rem; font: inherit;
+  }
+  @media print {
+    body { background: white; }
+    main { padding: 0; }
+    .table-scroll { max-height: none; overflow: visible; }
+    thead th { position: static; color: #182538; background: #e9eef5; }
+    label { display: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+<h1>JPAMB ablation results</h1>
+<div class="table-scroll" tabindex="0"><table id="summary"><thead><tr><th scope="col">#</th><th scope="col">Static</th><th scope="col">Dict</th><th scope="col">DynStruct</th><th scope="col">Syntactic</th><th scope="col">Score</th><th scope="col">Wall time</th><th scope="col">JPAMB abs</th><th scope="col">Rel time</th></tr></thead><tbody><tr><th scope="row">1</th><td>ON</td><td>ON</td><td>ON</td><td>ON</td><td>625.333</td><td>23.355 s</td><td>22.399 s</td><td>1.830 Db</td></tr><tr><th scope="row">2</th><td>ON</td><td>ON</td><td>ON</td><td>OFF</td><td>625.333</td><td>24.924 s</td><td>23.978 s</td><td>1.813 Db</td></tr><tr><th scope="row">3</th><td>ON</td><td>ON</td><td>OFF</td><td>ON</td><td>401.852</td><td>23.126 s</td><td>22.209 s</td><td>1.808 Db</td></tr><tr><th scope="row">4</th><td>ON</td><td>ON</td><td>OFF</td><td>OFF</td><td>384.697</td><td>25.871 s</td><td>24.888 s</td><td>1.827 Db</td></tr><tr><th scope="row">5</th><td>ON</td><td>OFF</td><td>ON</td><td>ON</td><td>353.942</td><td>23.821 s</td><td>22.624 s</td><td>1.776 Db</td></tr><tr><th scope="row">6</th><td>ON</td><td>OFF</td><td>ON</td><td>OFF</td><td>353.942</td><td>27.365 s</td><td>26.248 s</td><td>1.791 Db</td></tr><tr><th scope="row">7</th><td>ON</td><td>OFF</td><td>OFF</td><td>ON</td><td>351.633</td><td>23.023 s</td><td>21.964 s</td><td>1.765 Db</td></tr><tr><th scope="row">8</th><td>ON</td><td>OFF</td><td>OFF</td><td>OFF</td><td>337.943</td><td>23.208 s</td><td>22.215 s</td><td>1.770 Db</td></tr><tr><th scope="row">9</th><td>OFF</td><td>ON</td><td>ON</td><td>ON</td><td>396.906</td><td>24.709 s</td><td>23.718 s</td><td>1.817 Db</td></tr><tr><th scope="row">10</th><td>OFF</td><td>ON</td><td>ON</td><td>OFF</td><td>394.446</td><td>23.920 s</td><td>22.882 s</td><td>1.814 Db</td></tr><tr><th scope="row">11</th><td>OFF</td><td>ON</td><td>OFF</td><td>ON</td><td>389.554</td><td>24.979 s</td><td>24.064 s</td><td>1.830 Db</td></tr><tr><th scope="row">12</th><td>OFF</td><td>ON</td><td>OFF</td><td>OFF</td><td>351.633</td><td>24.487 s</td><td>23.553 s</td><td>1.818 Db</td></tr><tr><th scope="row">13</th><td>OFF</td><td>OFF</td><td>ON</td><td>ON</td><td>331.200</td><td>22.249 s</td><td>21.287 s</td><td>1.804 Db</td></tr><tr><th scope="row">14</th><td>OFF</td><td>OFF</td><td>ON</td><td>OFF</td><td>327.309</td><td>22.517 s</td><td>21.582 s</td><td>1.779 Db</td></tr><tr><th scope="row">15</th><td>OFF</td><td>OFF</td><td>OFF</td><td>ON</td><td>326.742</td><td>20.760 s</td><td>19.873 s</td><td>1.775 Db</td></tr><tr><th scope="row">16</th><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td><td>294.781</td><td>20.078 s</td><td>19.163 s</td><td>1.753 Db</td></tr></tbody></table></div>
+<h2>Coverage and run status</h2>
+<div class="table-scroll" tabindex="0"><table id="coverage"><thead><tr><th scope="col">#</th><th scope="col">Complete</th><th scope="col">Failed / incomplete</th><th scope="col">Timed out</th><th scope="col">Coverage</th><th scope="col">Smith coverage</th><th scope="col">Outcome pairs</th><th scope="col">Analysis time</th><th scope="col">CLI elapsed</th></tr></thead><tbody><tr><th scope="row">1</th><td>1</td><td>0</td><td>0</td><td>84.207%</td><td>84.720%</td><td>194.000</td><td>9.032 s</td><td>23.210 s</td></tr><tr><th scope="row">2</th><td>1</td><td>0</td><td>0</td><td>84.207%</td><td>84.720%</td><td>194.000</td><td>11.095 s</td><td>24.793 s</td></tr><tr><th scope="row">3</th><td>1</td><td>0</td><td>0</td><td>84.109%</td><td>84.515%</td><td>192.000</td><td>9.771 s</td><td>22.999 s</td></tr><tr><th scope="row">4</th><td>1</td><td>0</td><td>0</td><td>83.330%</td><td>82.880%</td><td>185.000</td><td>9.656 s</td><td>25.745 s</td></tr><tr><th scope="row">5</th><td>1</td><td>0</td><td>0</td><td>81.075%</td><td>84.250%</td><td>172.000</td><td>8.085 s</td><td>23.623 s</td></tr><tr><th scope="row">6</th><td>1</td><td>0</td><td>0</td><td>81.075%</td><td>84.250%</td><td>172.000</td><td>11.227 s</td><td>27.186 s</td></tr><tr><th scope="row">7</th><td>1</td><td>0</td><td>0</td><td>81.019%</td><td>84.132%</td><td>171.000</td><td>8.495 s</td><td>22.895 s</td></tr><tr><th scope="row">8</th><td>1</td><td>0</td><td>0</td><td>80.423%</td><td>82.880%</td><td>165.000</td><td>8.173 s</td><td>23.082 s</td></tr><tr><th scope="row">9</th><td>1</td><td>0</td><td>0</td><td>83.746%</td><td>83.753%</td><td>190.000</td><td>9.653 s</td><td>24.568 s</td></tr><tr><th scope="row">10</th><td>1</td><td>0</td><td>0</td><td>83.696%</td><td>83.647%</td><td>189.000</td><td>9.005 s</td><td>23.769 s</td></tr><tr><th scope="row">11</th><td>1</td><td>0</td><td>0</td><td>83.386%</td><td>82.996%</td><td>187.000</td><td>10.564 s</td><td>24.857 s</td></tr><tr><th scope="row">12</th><td>1</td><td>0</td><td>0</td><td>81.381%</td><td>78.786%</td><td>171.000</td><td>10.370 s</td><td>24.352 s</td></tr><tr><th scope="row">13</th><td>1</td><td>0</td><td>0</td><td>79.629%</td><td>81.214%</td><td>162.000</td><td>7.399 s</td><td>22.111 s</td></tr><tr><th scope="row">14</th><td>1</td><td>0</td><td>0</td><td>79.553%</td><td>81.053%</td><td>160.000</td><td>8.473 s</td><td>22.393 s</td></tr><tr><th scope="row">15</th><td>1</td><td>0</td><td>0</td><td>79.291%</td><td>80.503%</td><td>160.000</td><td>7.378 s</td><td>20.639 s</td></tr><tr><th scope="row">16</th><td>1</td><td>0</td><td>0</td><td>78.211%</td><td>78.236%</td><td>145.000</td><td>6.916 s</td><td>19.952 s</td></tr></tbody></table></div>
+<p class="notes">Coverage weights each method equally. Each run averages its internal iterations for coverage, observed method–outcome pair counts, and summed analysis time. Values show the mean across complete runs and sample standard deviation when available. Coverage deviations are in percentage points (pp).</p>
+</main>
+</body>
+</html>

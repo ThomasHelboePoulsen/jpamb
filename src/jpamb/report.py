@@ -4,6 +4,7 @@ import shlex
 import subprocess
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Self, TextIO
 
 import sexpr
@@ -26,11 +27,18 @@ class AnalysisInfo:
         timeout: float,
         eff: Effect,
         context: str = "the program",
+        cwd: Path | None = None,
+        env: dict[str, str] | None = None,
     ) -> Self:
         """Probe a program with `info` and parse its metadata."""
         with eff.context(f"Getting info about {context}"):
             try:
-                out = eff.run(cmd + ("info",), timeout=timeout)
+                options = {}
+                if cwd is not None:
+                    options["cwd"] = cwd
+                if env is not None:
+                    options["env"] = env
+                out = eff.run(cmd + ("info",), timeout=timeout, **options)
             except subprocess.CalledProcessError as e:
                 eff.error(f"Ran {shlex.join(cmd)} info, and got error:\n{e.stderr}")
                 raise
