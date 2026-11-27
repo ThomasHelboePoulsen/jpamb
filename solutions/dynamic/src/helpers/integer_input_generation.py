@@ -6,7 +6,7 @@ from tree_sitter import Node
 
 import jpamb
 import jvm
-from dynamic_java_literals import INT_MAX, INT_MIN, integer_candidates, method_body
+from helpers.dynamic_java_literals import INT_MAX, INT_MIN, integer_candidates, method_body
 
 IntegerOperation = tuple[str, int]
 ARITHMETIC_SEED_LIMIT = 128
@@ -34,7 +34,12 @@ def integer_literal(node: Node) -> int | None:
 
 
 def get_integer_operations(methodid: jvm.AbsMethodID, suite: jpamb.Suite) -> tuple[IntegerOperation, ...]:
-    if jvm.Int() not in methodid.extension.params:
+    '''Finds all integer operations and the constant values used in them'''
+    has_int_or_smith = any(
+        p == jvm.Int() or (isinstance(p, jvm.Object) and "Smith" in str(p.name))
+        for p in methodid.extension.params
+    )
+    if not has_int_or_smith:
         return ()
 
     operations = set()
@@ -59,6 +64,7 @@ def get_integer_operations(methodid: jvm.AbsMethodID, suite: jpamb.Suite) -> tup
 
 
 def arithmetic_neighbors(value: int, operations: tuple[IntegerOperation, ...]) -> set[int]:
+    """Generates integer neighbours by applying operation with value to input value"""
     candidates = set()
     for operator, operand in operations:
         if operator in {"+", "-"}:

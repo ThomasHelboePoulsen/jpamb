@@ -4,7 +4,7 @@ from helpers.bitstring_input_generation import (
     int_to_bits,
     bits_to_int,
     replace_bits,
-    generate_inputs,
+    generate_bitstring_inputs,
     mutate_input,
 )
 
@@ -32,7 +32,7 @@ def test_replace_bits():
 def test_generate_inputs():
     structure = [("integer", 0, 3), ("boolean", 4, 4)]
     dictionary = {int: [42]}
-    seeds = generate_inputs(structure, dictionary)
+    seeds = generate_bitstring_inputs(structure, dictionary)
 
     assert len(seeds) > 0
     # Every generated seed should be at least max_index + 2 long

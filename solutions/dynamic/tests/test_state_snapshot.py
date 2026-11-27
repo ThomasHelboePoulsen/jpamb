@@ -4,7 +4,7 @@ import pytest
 
 import jvm
 import jvm.state as jvmc
-from state_snapshot import ExecutionSnapshots, state_snapshot
+from helpers.state_snapshot import ExecutionSnapshots, state_snapshot
 
 
 def make_state():

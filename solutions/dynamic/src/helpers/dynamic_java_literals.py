@@ -118,9 +118,11 @@ def parameter_candidates(parameter_type, literals, raw_literals):
             raise NotImplementedError(f"No input candidates for {parameter_type}")
 
 
-def generate_inputs_from_dict(methodid, suite, max_combinations=2000):
-    raw_literals = get_literals_in_method(methodid, suite)
-    literals = convert_literals(raw_literals)
+def generate_inputs_from_dict(methodid, suite, max_combinations=2000, literals=None):
+    needs_raw = literals is None or jvm.Array(jvm.Char()) in methodid.extension.params
+    raw_literals = get_literals_in_method(methodid, suite) if needs_raw else {}
+    if literals is None:
+        literals = convert_literals(raw_literals)
     pools = []
     for parameter_type in methodid.extension.params:
         pools.append(parameter_candidates(parameter_type, literals, raw_literals))
@@ -143,25 +145,26 @@ def convert_literals(raw_literals: dict[str, list[bytes]]) -> dict[type, list]:
     for category, values in raw_literals.items():
         for raw_value in values:
             text = raw_value.decode("utf-8")
-            if category == "decimal_integer_literal":
-                value = int(text)
-            elif category == "hex_integer_literal":
-                is_long = text.endswith(("l", "L"))
-                width = 64 if is_long else 32
-                digits = text[2:-1] if is_long else text[2:]
-                value = int(digits, 16)
-                if value >= 1 << (width - 1):
-                    value -= 1 << width
-            elif category in {"string_literal", "character_literal"}:
-                if text.startswith('"""') or "\\" in text:
-                    raise NotImplementedError("Escaped literals and text blocks are not supported")
-                value = text[1:-1]
-            elif category in {"true", "false"}:
-                value = category == "true"
-            elif category == "null_literal":
-                value = None
-            else:
-                raise NotImplementedError(f"Unsupported literal category: {category}")
+            match category:
+                case "decimal_integer_literal":
+                    value = int(text)
+                case "hex_integer_literal":
+                    is_long = text.endswith(("l", "L"))
+                    width = 64 if is_long else 32
+                    digits = text[2:-1] if is_long else text[2:]
+                    value = int(digits, 16)
+                    if value >= 1 << (width - 1):
+                        value -= 1 << width
+                case "string_literal" | "character_literal":
+                    if text.startswith('"""') or "\\" in text:
+                        raise NotImplementedError("Escaped literals and text blocks are not supported")
+                    value = text[1:-1]
+                case "true" | "false":
+                    value = category == "true"
+                case "null_literal":
+                    value = None
+                case _:
+                    raise NotImplementedError(f"Unsupported literal category: {category}")
             literals[type(value)].append(value)
 
     integers = set(literals[int])

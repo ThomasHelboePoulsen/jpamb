@@ -4,7 +4,7 @@ import pytest
 import jpamb
 from jpamb.utils import Effect
 import jvm
-from bitstring_structure import get_bitstring_fields, get_bitstring_structure
+from helpers.bitstring_structure import get_bitstring_fields, get_bitstring_structure
 
 
 @pytest.fixture(scope="module")
