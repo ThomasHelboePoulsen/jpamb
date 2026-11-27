@@ -46,9 +46,16 @@ def test_guided_mutation_retires_concretely_observed_outcome(monkeypatch):
 
     monkeypatch.setattr(dynamic_coverage, "execute_input", execute)
     monkeypatch.setattr(dynamic_coverage, "mutate_bitstring", lambda *_: "0010")
-    behaviors = dynamic_coverage.fuzz_coverage(
-        None, method, [seed], {seed}, set(), [], {}, budget=4,
-        smith_results=results, known_behaviors={"ok"},
+    ctx = dynamic_coverage.FuzzContext(
+        dictionary={},
+        structure=[],
+        smith_results=results,
+        integer_operations=(),
+        initial_seeds=[seed],
+        corpus=[seed],
+        used_corpus={seed},
+        behaviors={"ok"},
     )
+    behaviors = dynamic_coverage.coverage_based_fuzzing(None, method, ctx, budget=4)
     assert observed == ["101", "0010"]
     assert behaviors == {"ok", "assertion error"}

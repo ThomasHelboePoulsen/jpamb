@@ -343,4 +343,93 @@ public class Randomness {
         int val = smith.draw(16);
         assert val != 100 + 37;
     }
+
+    @Case("(r'00000111010110111100110100010101') -> assertion error")
+    @Case("(r'00000000000000000000000000000000') -> ok")
+    public static void magic32BitMatch(Smith smith) {
+        int x = smith.draw(32);
+        assert x != 123456789;
+    }
+
+    @Case("(r'00000000001010100000000100110011') -> assertion error")
+    @Case("(r'00000000000000000000000000000000') -> ok")
+    public static void multiFieldKey(Smith smith) {
+        int key1 = smith.draw(16);
+        int key2 = smith.draw(16);
+        assert key1 != 42 || key2 != 307;
+    }
+
+    @Case("(r'101101101101') -> assertion error")
+    @Case("(r'000000000000') -> ok")
+    public static void sequentialGateKeeper(Smith smith) {
+        if (smith.draw(2) == 2) {
+            if (smith.draw(2) == 3) {
+                if (smith.draw(2) == 1) {
+                    if (smith.draw(2) == 2) {
+                        if (smith.draw(2) == 3) {
+                            if (smith.draw(2) == 1) {
+                                assert false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Case("(r'00000000001010101') -> assertion error")
+    @Case("(r'00000000001010100') -> ok")
+    @Case("(r'00000000000000001') -> ok")
+    public static void backwardBranchCheck(Smith smith) {
+        int val = smith.draw(16);
+        boolean flag = smith.draw();
+        if (flag) {
+            assert val != 42;
+        }
+    }
+
+    @Case("(r'00010010001101000101011001111000') -> assertion error")
+    @Case("(r'00000000000000000000000000000000') -> ok")
+    public static void smithBitwiseXor(Smith smith) {
+        int val = smith.draw(32);
+        assert (val ^ 305419896) != 0;
+    }
+
+    @Case("(r'00000000000000000000000000101010') -> assertion error")
+    @Case("(r'00000000000000000000000000000000') -> ok")
+    public static void smithBitwiseMask(Smith smith) {
+        int val = smith.draw(32);
+        assert (val & 255) != 42;
+    }
+
+    @Case("(r'0000000000101010') -> assertion error")
+    @Case("(r'0000000000000000') -> ok")
+    public static void smithBitShift(Smith smith) {
+        int val = smith.draw(16);
+        assert (val << 2) != 168;
+    }
+
+    @Case("(r'00000000000000000000001101010010') -> assertion error")
+    @Case("(r'00000000000000000000000000000000') -> ok")
+    public static void smithArithmeticOffset(Smith smith) {
+        int val = smith.draw(32);
+        assert val + 150 != 1000;
+    }
+
+    @Case("(r'0000000001101111') -> assertion error")
+    @Case("(r'0000000000000000') -> ok")
+    public static void smithMultiplyTarget(Smith smith) {
+        int val = smith.draw(16);
+        assert val * 3 != 333;
+    }
+
+    @Case("(r'10000000000101010') -> assertion error")
+    @Case("(r'000101010') -> assertion error")
+    @Case("(r'000000000') -> ok")
+    public static void dynamicWidthDraw(Smith smith) {
+        boolean isWide = smith.draw();
+        int width = isWide ? 16 : 8;
+        int val = smith.draw(width);
+        assert val != 42;
+    }
 }

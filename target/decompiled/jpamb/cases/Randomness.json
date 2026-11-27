@@ -9235,6 +9235,2769 @@
     },
     {
       "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'0000000010001001') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'0000000000000000') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 1,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 16
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 3,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 1,
+            "offset": 8,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 9,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 12,
+            "opr": "ifz",
+            "target": 13
+          },
+          {
+            "index": 1,
+            "offset": 15,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 16,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 137
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 19,
+            "opr": "if",
+            "target": 13
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 22,
+            "opr": "new"
+          },
+          {
+            "offset": 25,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 26,
+            "opr": "invoke"
+          },
+          {
+            "offset": 29,
+            "opr": "throw"
+          },
+          {
+            "offset": 30,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 343,
+            "offset": 0
+          },
+          {
+            "line": 344,
+            "offset": 4
+          },
+          {
+            "line": 345,
+            "offset": 13
+          }
+        ],
+        "max_locals": 2,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 13,
+            "info": [
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "magicComputedTarget",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000111010110111100110100010101') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000000000000000000000000000') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 1,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 32
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 3,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 1,
+            "offset": 8,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 9,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 12,
+            "opr": "ifz",
+            "target": 13
+          },
+          {
+            "index": 1,
+            "offset": 15,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 16,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 123456789
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 18,
+            "opr": "if",
+            "target": 13
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 21,
+            "opr": "new"
+          },
+          {
+            "offset": 24,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 25,
+            "opr": "invoke"
+          },
+          {
+            "offset": 28,
+            "opr": "throw"
+          },
+          {
+            "offset": 29,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 350,
+            "offset": 0
+          },
+          {
+            "line": 351,
+            "offset": 4
+          },
+          {
+            "line": 352,
+            "offset": 13
+          }
+        ],
+        "max_locals": 2,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 13,
+            "info": [
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "magic32BitMatch",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000001010100000000100110011') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000000000000000000000000000') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 1,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 16
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 3,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 1,
+            "offset": 8,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "index": 0,
+            "offset": 9,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 10,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 16
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 12,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 2,
+            "offset": 17,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 18,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 21,
+            "opr": "ifz",
+            "target": 20
+          },
+          {
+            "index": 1,
+            "offset": 24,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 25,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 42
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 27,
+            "opr": "if",
+            "target": 20
+          },
+          {
+            "index": 2,
+            "offset": 30,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 31,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 307
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 34,
+            "opr": "if",
+            "target": 20
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 37,
+            "opr": "new"
+          },
+          {
+            "offset": 40,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 41,
+            "opr": "invoke"
+          },
+          {
+            "offset": 44,
+            "opr": "throw"
+          },
+          {
+            "offset": 45,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 357,
+            "offset": 0
+          },
+          {
+            "line": 358,
+            "offset": 4
+          },
+          {
+            "line": 359,
+            "offset": 8
+          },
+          {
+            "line": 360,
+            "offset": 20
+          }
+        ],
+        "max_locals": 3,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 20,
+            "info": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "multiFieldKey",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'101101101101') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'000000000000') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 1,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 2
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 2,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "offset": 7,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 2
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 8,
+            "opr": "if",
+            "target": 36
+          },
+          {
+            "index": 0,
+            "offset": 11,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 12,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 2
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 13,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "offset": 18,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 3
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 19,
+            "opr": "if",
+            "target": 36
+          },
+          {
+            "index": 0,
+            "offset": 22,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 23,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 2
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 24,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "offset": 29,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 1
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 30,
+            "opr": "if",
+            "target": 36
+          },
+          {
+            "index": 0,
+            "offset": 33,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 34,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 2
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 35,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "offset": 40,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 2
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 41,
+            "opr": "if",
+            "target": 36
+          },
+          {
+            "index": 0,
+            "offset": 44,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 45,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 2
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 46,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "offset": 51,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 3
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 52,
+            "opr": "if",
+            "target": 36
+          },
+          {
+            "index": 0,
+            "offset": 55,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 56,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 2
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 57,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "offset": 62,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 1
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 63,
+            "opr": "if",
+            "target": 36
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 66,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 69,
+            "opr": "ifz",
+            "target": 36
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 72,
+            "opr": "new"
+          },
+          {
+            "offset": 75,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 76,
+            "opr": "invoke"
+          },
+          {
+            "offset": 79,
+            "opr": "throw"
+          },
+          {
+            "offset": 80,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 365,
+            "offset": 0
+          },
+          {
+            "line": 366,
+            "offset": 5
+          },
+          {
+            "line": 367,
+            "offset": 10
+          },
+          {
+            "line": 368,
+            "offset": 15
+          },
+          {
+            "line": 369,
+            "offset": 20
+          },
+          {
+            "line": 370,
+            "offset": 25
+          },
+          {
+            "line": 371,
+            "offset": 30
+          },
+          {
+            "line": 378,
+            "offset": 36
+          }
+        ],
+        "max_locals": 1,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 36,
+            "type": "same"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "sequentialGateKeeper",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000001010101') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000001010100') -> ok"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000000000001') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 1,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 16
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 3,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 1,
+            "offset": 8,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "index": 0,
+            "offset": 9,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "boolean"
+            },
+            "offset": 10,
+            "opr": "invoke",
+            "stack_size": 1
+          },
+          {
+            "index": 2,
+            "offset": 15,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "index": 2,
+            "offset": 16,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "condition": "eq",
+            "offset": 17,
+            "opr": "ifz",
+            "target": 18
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 20,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 23,
+            "opr": "ifz",
+            "target": 18
+          },
+          {
+            "index": 1,
+            "offset": 26,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 27,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 42
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 29,
+            "opr": "if",
+            "target": 18
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 32,
+            "opr": "new"
+          },
+          {
+            "offset": 35,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 36,
+            "opr": "invoke"
+          },
+          {
+            "offset": 39,
+            "opr": "throw"
+          },
+          {
+            "offset": 40,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 384,
+            "offset": 0
+          },
+          {
+            "line": 385,
+            "offset": 4
+          },
+          {
+            "line": 386,
+            "offset": 7
+          },
+          {
+            "line": 387,
+            "offset": 9
+          },
+          {
+            "line": 389,
+            "offset": 18
+          }
+        ],
+        "max_locals": 3,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 18,
+            "info": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "backwardBranchCheck",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00010010001101000101011001111000') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000000000000000000000000000') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 1,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 32
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 3,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 1,
+            "offset": 8,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 9,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 12,
+            "opr": "ifz",
+            "target": 14
+          },
+          {
+            "index": 1,
+            "offset": 15,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 16,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 305419896
+            }
+          },
+          {
+            "offset": 18,
+            "operant": "xor",
+            "opr": "bitopr",
+            "type": "int"
+          },
+          {
+            "condition": "ne",
+            "offset": 19,
+            "opr": "ifz",
+            "target": 14
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 22,
+            "opr": "new"
+          },
+          {
+            "offset": 25,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 26,
+            "opr": "invoke"
+          },
+          {
+            "offset": 29,
+            "opr": "throw"
+          },
+          {
+            "offset": 30,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 394,
+            "offset": 0
+          },
+          {
+            "line": 395,
+            "offset": 4
+          },
+          {
+            "line": 396,
+            "offset": 14
+          }
+        ],
+        "max_locals": 2,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 14,
+            "info": [
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "smithBitwiseXor",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000000000000000000000101010') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000000000000000000000000000') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 1,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 32
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 3,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 1,
+            "offset": 8,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 9,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 12,
+            "opr": "ifz",
+            "target": 15
+          },
+          {
+            "index": 1,
+            "offset": 15,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 16,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 255
+            }
+          },
+          {
+            "offset": 19,
+            "operant": "and",
+            "opr": "bitopr",
+            "type": "int"
+          },
+          {
+            "offset": 20,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 42
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 22,
+            "opr": "if",
+            "target": 15
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 25,
+            "opr": "new"
+          },
+          {
+            "offset": 28,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 29,
+            "opr": "invoke"
+          },
+          {
+            "offset": 32,
+            "opr": "throw"
+          },
+          {
+            "offset": 33,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 401,
+            "offset": 0
+          },
+          {
+            "line": 402,
+            "offset": 4
+          },
+          {
+            "line": 403,
+            "offset": 15
+          }
+        ],
+        "max_locals": 2,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 15,
+            "info": [
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "smithBitwiseMask",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'0000000000101010') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'0000000000000000') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 1,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 16
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 3,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 1,
+            "offset": 8,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 9,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 12,
+            "opr": "ifz",
+            "target": 15
+          },
+          {
+            "index": 1,
+            "offset": 15,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 16,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 2
+            }
+          },
+          {
+            "offset": 17,
+            "operant": "shl",
+            "opr": "bitopr",
+            "type": "int"
+          },
+          {
+            "offset": 18,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 168
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 21,
+            "opr": "if",
+            "target": 15
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 24,
+            "opr": "new"
+          },
+          {
+            "offset": 27,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 28,
+            "opr": "invoke"
+          },
+          {
+            "offset": 31,
+            "opr": "throw"
+          },
+          {
+            "offset": 32,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 408,
+            "offset": 0
+          },
+          {
+            "line": 409,
+            "offset": 4
+          },
+          {
+            "line": 410,
+            "offset": 15
+          }
+        ],
+        "max_locals": 2,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 15,
+            "info": [
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "smithBitShift",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000000000000000001101010010') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'00000000000000000000000000000000') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 1,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 32
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 3,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 1,
+            "offset": 8,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 9,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 12,
+            "opr": "ifz",
+            "target": 15
+          },
+          {
+            "index": 1,
+            "offset": 15,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 16,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 150
+            }
+          },
+          {
+            "offset": 19,
+            "operant": "add",
+            "opr": "binary",
+            "type": "int"
+          },
+          {
+            "offset": 20,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 1000
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 23,
+            "opr": "if",
+            "target": 15
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 26,
+            "opr": "new"
+          },
+          {
+            "offset": 29,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 30,
+            "opr": "invoke"
+          },
+          {
+            "offset": 33,
+            "opr": "throw"
+          },
+          {
+            "offset": 34,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 415,
+            "offset": 0
+          },
+          {
+            "line": 416,
+            "offset": 4
+          },
+          {
+            "line": 417,
+            "offset": 15
+          }
+        ],
+        "max_locals": 2,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 15,
+            "info": [
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "smithArithmeticOffset",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'0000000001101111') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'0000000000000000') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "offset": 1,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 16
+            }
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 3,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 1,
+            "offset": 8,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 9,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 12,
+            "opr": "ifz",
+            "target": 15
+          },
+          {
+            "index": 1,
+            "offset": 15,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 16,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 3
+            }
+          },
+          {
+            "offset": 17,
+            "operant": "mul",
+            "opr": "binary",
+            "type": "int"
+          },
+          {
+            "offset": 18,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 333
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 21,
+            "opr": "if",
+            "target": 15
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 24,
+            "opr": "new"
+          },
+          {
+            "offset": 27,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 28,
+            "opr": "invoke"
+          },
+          {
+            "offset": 31,
+            "opr": "throw"
+          },
+          {
+            "offset": 32,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 422,
+            "offset": 0
+          },
+          {
+            "line": 423,
+            "offset": 4
+          },
+          {
+            "line": 424,
+            "offset": 15
+          }
+        ],
+        "max_locals": 2,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 15,
+            "info": [
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "smithMultiplyTarget",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
+        "public",
+        "static"
+      ],
+      "annotations": [
+        {
+          "is_runtime_visible": true,
+          "type": "jpamb/utils/Cases",
+          "values": {
+            "value": {
+              "type": "array",
+              "value": [
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'10000000000101010') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'000101010') -> assertion error"
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "annotation",
+                  "value": {
+                    "type": "jpamb/utils/Case",
+                    "values": {
+                      "value": {
+                        "type": "string",
+                        "value": "(r'000000000') -> ok"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "code": {
+        "annotations": [],
+        "bytecode": [
+          {
+            "index": 0,
+            "offset": 0,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "boolean"
+            },
+            "offset": 1,
+            "opr": "invoke",
+            "stack_size": 1
+          },
+          {
+            "index": 1,
+            "offset": 6,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "index": 1,
+            "offset": 7,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "condition": "eq",
+            "offset": 8,
+            "opr": "ifz",
+            "target": 7
+          },
+          {
+            "offset": 11,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 16
+            }
+          },
+          {
+            "offset": 13,
+            "opr": "goto",
+            "target": 8
+          },
+          {
+            "offset": 16,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 8
+            }
+          },
+          {
+            "index": 2,
+            "offset": 18,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "index": 0,
+            "offset": 19,
+            "opr": "load",
+            "type": "ref"
+          },
+          {
+            "index": 2,
+            "offset": 20,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "access": "interface",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "draw",
+              "ref": {
+                "kind": "class",
+                "name": "jpamb/utils/Smith"
+              },
+              "returns": "int"
+            },
+            "offset": 21,
+            "opr": "invoke",
+            "stack_size": 2
+          },
+          {
+            "index": 3,
+            "offset": 26,
+            "opr": "store",
+            "type": "int"
+          },
+          {
+            "field": {
+              "class": "jpamb/cases/Randomness",
+              "name": "$assertionsDisabled",
+              "type": "boolean"
+            },
+            "offset": 27,
+            "opr": "get",
+            "static": true
+          },
+          {
+            "condition": "ne",
+            "offset": 30,
+            "opr": "ifz",
+            "target": 22
+          },
+          {
+            "index": 3,
+            "offset": 33,
+            "opr": "load",
+            "type": "int"
+          },
+          {
+            "offset": 34,
+            "opr": "push",
+            "value": {
+              "type": "integer",
+              "value": 42
+            }
+          },
+          {
+            "condition": "ne",
+            "offset": 36,
+            "opr": "if",
+            "target": 22
+          },
+          {
+            "class": "java/lang/AssertionError",
+            "offset": 39,
+            "opr": "new"
+          },
+          {
+            "offset": 42,
+            "opr": "dup",
+            "words": 1
+          },
+          {
+            "access": "special",
+            "method": {
+              "args": [],
+              "is_interface": false,
+              "name": "<init>",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/AssertionError"
+              },
+              "returns": null
+            },
+            "offset": 43,
+            "opr": "invoke"
+          },
+          {
+            "offset": 46,
+            "opr": "throw"
+          },
+          {
+            "offset": 47,
+            "opr": "return",
+            "type": null
+          }
+        ],
+        "exceptions": [],
+        "lines": [
+          {
+            "line": 430,
+            "offset": 0
+          },
+          {
+            "line": 431,
+            "offset": 3
+          },
+          {
+            "line": 432,
+            "offset": 9
+          },
+          {
+            "line": 433,
+            "offset": 13
+          },
+          {
+            "line": 434,
+            "offset": 22
+          }
+        ],
+        "max_locals": 4,
+        "max_stack": 2,
+        "stack_map": [
+          {
+            "index": 7,
+            "info": [
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          },
+          {
+            "index": 8,
+            "info": {
+              "type": "integer"
+            },
+            "type": "same_locals_1_stack_item_frame"
+          },
+          {
+            "index": 22,
+            "info": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "type": "append_frame"
+          }
+        ]
+      },
+      "default": null,
+      "exceptions": [],
+      "name": "dynamicWidthDraw",
+      "params": [
+        {
+          "annotations": [],
+          "type": {
+            "annotations": [],
+            "args": [],
+            "inner": null,
+            "kind": "class",
+            "name": "jpamb/utils/Smith"
+          },
+          "visible": true
+        }
+      ],
+      "returns": {
+        "annotations": [],
+        "type": null
+      },
+      "typeparams": []
+    },
+    {
+      "access": [
         "static"
       ],
       "annotations": [],

@@ -1289,30 +1289,13 @@
             }
           },
           {
-            "access": "virtual",
-            "method": {
-              "args": [],
-              "name": "toCharArray",
-              "ref": {
-                "kind": "class",
-                "name": "java/lang/String"
-              },
-              "returns": {
-                "kind": "array",
-                "type": "char"
-              }
-            },
-            "offset": 2,
-            "opr": "invoke"
-          },
-          {
             "index": 1,
-            "offset": 5,
+            "offset": 2,
             "opr": "store",
             "type": "ref"
           },
           {
-            "offset": 6,
+            "offset": 3,
             "opr": "push",
             "value": {
               "type": "integer",
@@ -1321,12 +1304,12 @@
           },
           {
             "index": 2,
-            "offset": 7,
+            "offset": 4,
             "opr": "store",
             "type": "int"
           },
           {
-            "offset": 8,
+            "offset": 5,
             "opr": "push",
             "value": {
               "type": "integer",
@@ -1335,36 +1318,36 @@
           },
           {
             "index": 3,
-            "offset": 9,
+            "offset": 6,
             "opr": "store",
             "type": "int"
           },
           {
             "index": 3,
-            "offset": 10,
+            "offset": 7,
             "opr": "load",
             "type": "int"
           },
           {
             "index": 0,
-            "offset": 11,
+            "offset": 8,
             "opr": "load",
             "type": "int"
           },
           {
             "condition": "ge",
-            "offset": 12,
+            "offset": 9,
             "opr": "if",
-            "target": 25
+            "target": 24
           },
           {
             "index": 2,
-            "offset": 15,
+            "offset": 12,
             "opr": "load",
             "type": "int"
           },
           {
-            "offset": 16,
+            "offset": 13,
             "opr": "push",
             "value": {
               "type": "integer",
@@ -1372,30 +1355,41 @@
             }
           },
           {
-            "offset": 17,
+            "offset": 14,
             "operant": "shl",
             "opr": "bitopr",
             "type": "int"
           },
           {
             "index": 1,
-            "offset": 18,
+            "offset": 15,
             "opr": "load",
             "type": "ref"
           },
           {
             "index": 3,
-            "offset": 19,
+            "offset": 16,
             "opr": "load",
             "type": "int"
           },
           {
-            "offset": 20,
-            "opr": "array_load",
-            "type": "char"
+            "access": "virtual",
+            "method": {
+              "args": [
+                "int"
+              ],
+              "name": "charAt",
+              "ref": {
+                "kind": "class",
+                "name": "java/lang/String"
+              },
+              "returns": "char"
+            },
+            "offset": 17,
+            "opr": "invoke"
           },
           {
-            "offset": 21,
+            "offset": 20,
             "opr": "push",
             "value": {
               "type": "integer",
@@ -1404,12 +1398,12 @@
           },
           {
             "condition": "ne",
-            "offset": 23,
+            "offset": 22,
             "opr": "if",
-            "target": 20
+            "target": 19
           },
           {
-            "offset": 26,
+            "offset": 25,
             "opr": "push",
             "value": {
               "type": "integer",
@@ -1417,12 +1411,12 @@
             }
           },
           {
-            "offset": 27,
+            "offset": 26,
             "opr": "goto",
-            "target": 21
+            "target": 20
           },
           {
-            "offset": 30,
+            "offset": 29,
             "opr": "push",
             "value": {
               "type": "integer",
@@ -1430,27 +1424,27 @@
             }
           },
           {
-            "offset": 31,
+            "offset": 30,
             "operant": "or",
             "opr": "bitopr",
             "type": "int"
           },
           {
             "index": 2,
-            "offset": 32,
+            "offset": 31,
             "opr": "store",
             "type": "int"
           },
           {
             "amount": 1,
             "index": 3,
-            "offset": 33,
+            "offset": 32,
             "opr": "incr"
           },
           {
-            "offset": 36,
+            "offset": 35,
             "opr": "goto",
-            "target": 7
+            "target": 6
           },
           {
             "field": {
@@ -1458,36 +1452,36 @@
               "name": "$assertionsDisabled",
               "type": "boolean"
             },
-            "offset": 39,
+            "offset": 38,
             "opr": "get",
             "static": true
           },
           {
             "condition": "ne",
-            "offset": 42,
+            "offset": 41,
             "opr": "ifz",
-            "target": 36
+            "target": 35
           },
           {
             "index": 2,
-            "offset": 45,
+            "offset": 44,
             "opr": "load",
             "type": "int"
           },
           {
             "condition": "lt",
-            "offset": 46,
+            "offset": 45,
             "opr": "ifz",
-            "target": 36
+            "target": 35
           },
           {
             "index": 2,
-            "offset": 49,
+            "offset": 48,
             "opr": "load",
             "type": "int"
           },
           {
-            "offset": 50,
+            "offset": 49,
             "opr": "push",
             "value": {
               "type": "integer",
@@ -1496,17 +1490,17 @@
           },
           {
             "condition": "eq",
-            "offset": 51,
+            "offset": 50,
             "opr": "if",
-            "target": 36
+            "target": 35
           },
           {
             "class": "java/lang/AssertionError",
-            "offset": 54,
+            "offset": 53,
             "opr": "new"
           },
           {
-            "offset": 57,
+            "offset": 56,
             "opr": "dup",
             "words": 1
           },
@@ -1522,15 +1516,15 @@
               },
               "returns": null
             },
-            "offset": 58,
+            "offset": 57,
             "opr": "invoke"
           },
           {
-            "offset": 61,
+            "offset": 60,
             "opr": "throw"
           },
           {
-            "offset": 62,
+            "offset": 61,
             "opr": "return",
             "type": null
           }
@@ -1543,39 +1537,39 @@
           },
           {
             "line": 53,
-            "offset": 3
+            "offset": 2
           },
           {
             "line": 54,
-            "offset": 5
+            "offset": 4
           },
           {
             "line": 55,
-            "offset": 10
+            "offset": 9
           },
           {
             "line": 54,
-            "offset": 23
+            "offset": 22
           },
           {
             "line": 57,
-            "offset": 25
+            "offset": 24
           },
           {
             "line": 58,
-            "offset": 36
+            "offset": 35
           }
         ],
         "max_locals": 4,
         "max_stack": 3,
         "stack_map": [
           {
-            "index": 7,
+            "index": 6,
             "info": [
               {
                 "ref": {
-                  "kind": "array",
-                  "type": "char"
+                  "kind": "class",
+                  "name": "java/lang/String"
                 },
                 "type": "object"
               },
@@ -1589,22 +1583,22 @@
             "type": "append_frame"
           },
           {
-            "index": 20,
+            "index": 19,
             "info": {
               "type": "integer"
             },
             "type": "same_locals_1_stack_item_frame"
           },
           {
-            "index": 21,
+            "index": 20,
             "locals": [
               {
                 "type": "integer"
               },
               {
                 "ref": {
-                  "kind": "array",
-                  "type": "char"
+                  "kind": "class",
+                  "name": "java/lang/String"
                 },
                 "type": "object"
               },
@@ -1626,12 +1620,12 @@
             "type": "full_frame"
           },
           {
-            "index": 25,
+            "index": 24,
             "info": 1,
             "type": "chop_frame"
           },
           {
-            "index": 36,
+            "index": 35,
             "type": "same"
           }
         ]
