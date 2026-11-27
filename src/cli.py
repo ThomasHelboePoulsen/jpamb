@@ -456,7 +456,7 @@ def analyse(
     if state_file is not None and not paused:
         state_file.unlink(missing_ok=True)
     results.display(file=sys.stdout)
-    if csv is not None or any(row.analysis_seconds is not None for row in rows):
+    if csv is not None:
         click.echo(comparison_report([run]))
 
     if status != "success":

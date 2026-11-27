@@ -36,11 +36,13 @@ jpamb analyse dynamic-coverage-analysis --iterations 10 --no-syntactic-structure
 jpamb analyse dynamic-coverage-analysis --iterations 10 --no-static --no-dictionary --csv results/no-static-no-dictionary.csv
 ```
 
-JPAMB prints its usual method, total, and category score tables. The evaluation
-table adds coverage, observed outcomes, and analysis time. `--iterations`
-controls JPAMB's internal method iterations and defaults to three. Exploratory
-runs can use any positive count. The official `--report` validation still
-requires three iterations and applies the existing report rules.
+JPAMB prints its usual method, total, and category score tables. With `--csv`,
+it also prints evaluation tables with coverage, observed outcomes, and analysis
+time.
+
+`--iterations` controls JPAMB's internal method iterations and defaults to three.
+Exploratory runs can use any positive count. The official `--report` validation
+still requires three iterations and applies the existing report rules.
 
 The optional CSV has one row per attempted method and internal iteration.
 `run_id` identifies the JPAMB invocation, `iteration` is one-based, and

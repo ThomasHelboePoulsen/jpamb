@@ -110,6 +110,25 @@ def test_independent_flags_reach_the_analyzer(monkeypatch, evaluation_suite, fla
     assert ComponentSettings.from_environment() == ComponentSettings()
 
 
+def test_filtered_analysis_shows_only_standard_results(monkeypatch, evaluation_suite):
+    suite, _, _ = evaluation_suite
+    methods = []
+
+    def experiment(_effect, command, *, env, **kwargs):
+        method = command[1]
+        methods.append(method)
+        return prediction_experiment(method, env, 1)
+
+    monkeypatch.setattr(Effect, "experiment", experiment)
+    result = invoke(suite, "--filter", "first", "--iterations", "1")
+    assert result.exit_code == 0, result.output
+    assert methods == [METHODS[0]]
+    assert "Totals" in result.output
+    assert "--- Categories ---" in result.output
+    assert "Ablation results" not in result.output
+    assert "Coverage and run status" not in result.output
+
+
 def test_csv_matches_official_scores_and_framework_iterations(
     monkeypatch, tmp_path, evaluation_suite
 ):
@@ -130,6 +149,8 @@ def test_csv_matches_official_scores_and_framework_iterations(
     path = tmp_path / "measurements.csv"
     first = invoke(suite, "--iterations", "2", "--no-static", "--csv", str(path))
     assert first.exit_code == 0, first.output
+    assert "Ablation results" in first.output
+    assert "Coverage and run status" in first.output
     assert info_calls == [ComponentSettings(static=False, dictionary=False)]
     assert [method for method, _ in calls] == list(METHODS) * 2
     assert len({path for _, path in calls}) == 4
